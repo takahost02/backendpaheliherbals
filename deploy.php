@@ -17,6 +17,6 @@ if ($return_var === 0) {
     echo "✅ Deployment Successful.";
 } else {
     http_response_code(500);
-    echo "❌ Deployment Failed.\n";
+    echo "❌ Deployment Failed.";
 }
 ?>
