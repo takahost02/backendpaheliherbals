@@ -1,0 +1,4 @@
+[07-Jul-2025 07:40:02 UTC] PHP Warning:  Version warning: Imagick was compiled against ImageMagick version 1692 but version 1693 is loaded. Imagick will run but may behave surprisingly in Unknown on line 0
+[07-Jul-2025 07:40:02 UTC] PHP Fatal error:  Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.3.0". You are running 8.1.32. in /home/paheliherbals/backend.paheliherbals.com/core/vendor/composer/platform_check.php on line 24
+[07-Jul-2025 07:40:03 UTC] PHP Warning:  Version warning: Imagick was compiled against ImageMagick version 1692 but version 1693 is loaded. Imagick will run but may behave surprisingly in Unknown on line 0
+[07-Jul-2025 07:40:03 UTC] PHP Fatal error:  Composer detected issues in your platform: Your Composer dependencies require a PHP version ">= 8.3.0". You are running 8.1.32. in /home/paheliherbals/backend.paheliherbals.com/core/vendor/composer/platform_check.php on line 24
