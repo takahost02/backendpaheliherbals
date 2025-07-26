@@ -404,5 +404,20 @@
         "subtitle": "Configure matrics or label income setup options of the system.",
         "icon": "las la-tags",
         "route_name": "admin.setting.matrics"
-    }
+    },
+    "repurchase_commission": {
+    "keyword": [
+        "repurchase",
+        "commission",
+        "repurchase commission",
+        "repurchase income",
+        "reorder bonus",
+        "residual income"
+    ],
+    "title": "Repurchase Commission Setup",
+    "subtitle": "Configure repurchase commission or reorder bonus settings of the system.",
+    "icon": "las la-sync-alt",
+    "route_name": "admin.setting.repurchase"
+}
+
 }

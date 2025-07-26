@@ -18,19 +18,39 @@ use Illuminate\Validation\Rule;
 use App\Lib\GoogleAuthenticator;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
+use App\Models\RepurchaseCommissionSetting;
+use App\Models\CommissionLog;
 
 class UserController extends Controller
 {
     public function home()
     {
         $pageTitle        = 'Dashboard';
-        $totalDeposit     = Deposit::where('user_id', auth()->id())->where('status', 1)->sum('amount');
-        $totalWithdraw    = Withdrawal::where('user_id', auth()->id())->where('status', 1)->sum('amount');
-        $completeWithdraw = Withdrawal::where('user_id', auth()->id())->where('status', 1)->count();
-        $pendingWithdraw  = Withdrawal::where('user_id', auth()->id())->where('status', 2)->count();
-        $totalRef         = User::where('ref_by', auth()->id())->count();
-        $totalBvCut       = BvLog::where('user_id', auth()->id())->where('trx_type', '-')->sum('amount');
-        return view('Template::user.dashboard', compact('pageTitle', 'totalDeposit', 'totalWithdraw', 'completeWithdraw', 'pendingWithdraw', 'totalRef', 'totalBvCut'));
+        $user             = auth()->user();
+        $userId           = $user->id;
+    
+        $totalDeposit     = Deposit::where('user_id', $userId)->where('status', 1)->sum('amount');
+        $totalWithdraw    = Withdrawal::where('user_id', $userId)->where('status', 1)->sum('amount');
+        $completeWithdraw = Withdrawal::where('user_id', $userId)->where('status', 1)->count();
+        $pendingWithdraw  = Withdrawal::where('user_id', $userId)->where('status', 2)->count();
+        $totalRef         = User::where('ref_by', $userId)->count();
+        $totalBvCut       = BvLog::where('user_id', $userId)->where('trx_type', '-')->sum('amount');
+    
+        
+        $totalIncome = ($user->total_ref_com ?? 0)
+                     + ($user->total_binary_com ?? 0)
+                     + ($user->total_level_com ?? 0);
+    
+        return view('Template::user.dashboard', compact(
+            'pageTitle',
+            'totalDeposit',
+            'totalWithdraw',
+            'completeWithdraw',
+            'pendingWithdraw',
+            'totalRef',
+            'totalBvCut',
+            'totalIncome' 
+        ));
     }
 
     public function depositHistory(Request $request)
@@ -146,63 +166,80 @@ class UserController extends Controller
     public function userData()
     {
         $user = auth()->user();
-
+    
         if ($user->profile_complete == Status::YES) {
             return to_route('user.home');
         }
-
+    
         $pageTitle  = 'User Data';
         $info       = json_decode(json_encode(getIpInfo()), true);
         $mobileCode = @implode(',', $info['code']);
         $countries  = json_decode(file_get_contents(resource_path('views/partials/country.json')));
-
-        return view('Template::user.user_data', compact('pageTitle', 'user', 'countries', 'mobileCode'));
+    
+        $lastUser = \App\Models\User::where('username', 'LIKE', 'PH707%')
+                    ->orderBy('id', 'desc')
+                    ->first();
+    
+        if ($lastUser && preg_match('/PH707(\d+)/', $lastUser->username, $matches)) {
+            $lastNumber = (int)$matches[1];
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
+        }
+    
+        $nextUsername = 'PH707' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+    
+        return view('Template::user.user_data', compact('pageTitle', 'user', 'countries', 'mobileCode', 'nextUsername'));
     }
+
 
     public function userDataSubmit(Request $request)
     {
-
         $user = auth()->user();
-
+    
         if ($user->profile_complete == Status::YES) {
             return to_route('user.home');
         }
-
+    
         $countryData  = (array)json_decode(file_get_contents(resource_path('views/partials/country.json')));
         $countryCodes = implode(',', array_keys($countryData));
         $mobileCodes  = implode(',', array_column($countryData, 'dial_code'));
         $countries    = implode(',', array_column($countryData, 'country'));
-
+    
         $request->validate([
             'country_code' => 'required|in:' . $countryCodes,
             'country'      => 'required|in:' . $countries,
             'mobile_code'  => 'required|in:' . $mobileCodes,
-            'username'     => 'required|unique:users|min:6',
             'mobile'       => ['required', 'regex:/^([0-9]*)$/', Rule::unique('users')->where('dial_code', $request->mobile_code)],
         ]);
-
-
-        if (preg_match("/[^a-z0-9_]/", trim($request->username))) {
-            $notify[] = ['info', 'Username can contain only small letters, numbers and underscore.'];
-            $notify[] = ['error', 'No special character, space or capital letters in username.'];
-            return back()->withNotify($notify)->withInput($request->all());
+    
+        $lastUser = \App\Models\User::where('username', 'LIKE', 'PH707%')
+                    ->orderBy('id', 'desc')
+                    ->first();
+    
+        if ($lastUser && preg_match('/PH707(\d+)/', $lastUser->username, $matches)) {
+            $lastNumber = (int)$matches[1];
+            $nextNumber = $lastNumber + 1;
+        } else {
+            $nextNumber = 1;
         }
-
+    
+        $username = 'PH707' . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
+    
         $user->country_code = $request->country_code;
         $user->mobile       = $request->mobile;
-        $user->username     = $request->username;
-
-
+        $user->username     = $username;
+    
         $user->address      = $request->address;
         $user->city         = $request->city;
         $user->state        = $request->state;
         $user->zip          = $request->zip;
         $user->country_name = @$request->country;
         $user->dial_code    = $request->mobile_code;
-
+    
         $user->profile_complete = Status::YES;
         $user->save();
-
+    
         return to_route('user.home');
     }
 
@@ -255,30 +292,33 @@ class UserController extends Controller
             'quantity'   => 'required|integer|gt:0',
             'product_id' => 'required|integer|gt:0'
         ]);
-
+    
         $product = Product::hasCategory()->active()->find($request->product_id);
-
+    
         if (!$product) {
             $notify[] = ['error', 'Product not found'];
             return back()->withNotify($notify);
         }
-
+    
         if ($request->quantity > $product->quantity) {
             $notify[] = ['error', 'Requested quantity is not available in stock'];
             return back()->withNotify($notify);
         }
+    
         $user       = auth()->user();
         $totalPrice = $product->price * $request->quantity;
+    
         if ($user->balance < $totalPrice) {
             $notify[] = ['error', 'Balance is not sufficient'];
             return back()->withNotify($notify);
         }
+    
         $user->balance -= $totalPrice;
         $user->save();
-
+    
         $product->quantity -= $request->quantity;
         $product->save();
-
+    
         $transaction               = new Transaction();
         $transaction->user_id      = $user->id;
         $transaction->amount       = $totalPrice;
@@ -288,7 +328,7 @@ class UserController extends Controller
         $transaction->details      = $product->name . ' item purchase';
         $transaction->trx          = getTrx();
         $transaction->save();
-
+    
         $order              = new Order();
         $order->user_id     = $user->id;
         $order->product_id  = $product->id;
@@ -298,7 +338,7 @@ class UserController extends Controller
         $order->trx         = $transaction->trx;
         $order->status      = 0;
         $order->save();
-
+    
         notify($user, 'ORDER_PLACED', [
             'product_name' => $product->name,
             'quantity'     => $request->quantity,
@@ -306,10 +346,66 @@ class UserController extends Controller
             'total_price'  => showAmount($totalPrice, currencyFormat: false),
             'trx'          => $transaction->trx,
         ]);
-
+    
+        $this->repurchaseLevelCommission($user->id, $totalPrice, $product->name . ' repurchase');
+    
         $notify[] = ['success', 'Order placed successfully'];
         return back()->withNotify($notify);
     }
+    
+    protected function repurchaseLevelCommission($userId, $amount, $details)
+    {
+        $setting = RepurchaseCommissionSetting::find(1);
+        if (!$setting || !$setting->commissions) return;
+    
+        $commissionLevels = is_array($setting->commissions)
+            ? $setting->commissions
+            : json_decode($setting->commissions, true);
+    
+        if (!is_array($commissionLevels)) return;
+    
+        $currentUser = User::find($userId);
+        if (!$currentUser) return;
+    
+        $upline = $currentUser->ref_by;
+    
+        for ($level = 1; $level <= 15; $level++) {
+            if (!$upline || !isset($commissionLevels[$level])) break;
+    
+            $percent = $commissionLevels[$level];
+            $commissionAmount = ($amount * $percent) / 100;
+    
+            $uplineUser = User::find($upline);
+            if ($uplineUser) {
+                $uplineUser->balance += $commissionAmount;
+                $uplineUser->total_ref_com += $commissionAmount;
+                $uplineUser->total_level_com += $commissionAmount;
+                $uplineUser->save();
+    
+                Transaction::create([
+                    'user_id'      => $uplineUser->id,
+                    'amount'       => $commissionAmount,
+                    'post_balance' => $uplineUser->balance,
+                    'trx_type'     => '+',
+                    'trx'          => getTrx(),
+                    'remark'       => 'repurchase_level_commission',
+                    'details'      => 'Repurchase Level ' . $level . ' Commission from ' . $currentUser->username . '. ' . $details
+                ]);
+    
+                CommissionLog::create([
+                    'user_id'         => $uplineUser->id,
+                    'type'            => 'Repurchase Level',
+                    'amount'          => $commissionAmount,
+                    'level'           => $level,
+                    'details'         => 'Repurchase Level ' . $level . ' Commission from ' . $currentUser->username . '. ' . $details,
+                    'source_username' => $currentUser->username,
+                ]);
+            }
+    
+            $upline = $uplineUser ? $uplineUser->ref_by : null;
+        }
+    }
+
 
     public function indexTransfer()
     {
@@ -410,22 +506,10 @@ class UserController extends Controller
         return back()->withNotify($notify);
     }
 
-    public function matrics()
-    {
-        $pageTitle = 'Matrics';
-    
-        $commissions = [];
-        for ($i = 1; $i <= 15; $i++) {
-            $commissions[$i] = gs("commission_$i"); 
-        }
-    
-        return view('Template::user.matrics', compact('pageTitle', 'commissions'));
-    }
-
     
         public function orders()
     {
-        $pageTitle = 'Orders';
+        $pageTitle = 'My Order';
         $orders    = Order::where('user_id', auth()->user()->id)->with('product')->orderBy('id', 'desc')->paginate(getPaginate());
         return view('Template::user.orders', compact('pageTitle', 'orders'));
     }

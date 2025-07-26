@@ -29,7 +29,14 @@
                 <tbody>
                     @forelse($transactions as $trx)
                     <tr>
-                        <td class="usr-type" data-label="@lang('User')">{{ $trx->user->fullname }}</td>
+                        <td class="usr-type" data-label="@lang('User')">
+                            @if ($trx->user)
+                                {{ $trx->user->fullname }}
+                            @else
+                                <span class="text-muted">N/A</span>
+                            @endif
+                        </td>
+
                         <td data-label="@lang('Trx')">
                             <strong>{{ $trx->trx }}</strong>
                         </td>

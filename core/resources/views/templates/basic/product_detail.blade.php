@@ -65,11 +65,11 @@
                             </li>
                             <li class="meta-item">
                                 <h6 class="title">@lang('Tags') :</h6>
-                                <div>
+                                @if (!empty($product->meta_keyword) && is_iterable($product->meta_keyword))
                                     @foreach ($product->meta_keyword as $keyword)
                                         <a href="#0">{{ $keyword }}</a>
                                     @endforeach
-                                </div>
+                                @endif
                             </li>
                         </ul>
                         @if ($product->specifications)

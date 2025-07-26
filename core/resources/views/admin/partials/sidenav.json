@@ -76,6 +76,18 @@
         "route_name": "admin.order.index",
         "menu_active": "admin.order.index"
     },
+    "commission": {
+        "keyword": [
+            "Commission",
+            "Payout",
+            "Earnings",
+            "Income"
+        ],
+        "title": "Manage Commission",
+        "icon": "las la-hand-holding-usd",
+        "route_name": "admin.commission.index",
+        "menu_active": "admin.commission.index"
+    },
     "manage_users": {
         "title": "Manage Users",
         "icon": "las la-users",

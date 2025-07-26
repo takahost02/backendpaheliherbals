@@ -209,6 +209,47 @@ class GeneralSettingController extends Controller
         $notify[] = ['success', 'Commission levels updated successfully'];
         return back()->withNotify($notify);
     }
+    
+    // Show the Repurchase Commission form
+    public function repurchase()
+    {
+        $pageTitle = 'Repurchase Commission Settings';
+    
+        // Return the row (object) so Blade can use $commissions->commissions
+        $commissions = DB::table('repurchase_commission_settings')->first();
+    
+        return view('admin.setting.repurchase', compact('pageTitle', 'commissions'));
+    }
+    
+    // Handle Repurchase Commission form submission
+    public function repurchaseSubmit(Request $request)
+    {
+        $request->validate([
+            'commission'   => 'required|array',
+            'commission.*' => 'nullable|numeric|min:0',
+        ]);
+    
+        // Normalize numeric values (cast to float; filter out nulls if desired)
+        $clean = array_map(function ($v) {
+            return is_null($v) || $v === '' ? null : (float) $v;
+        }, $request->commission);
+    
+        $data = [
+            'commissions' => json_encode($clean),
+            'updated_at'  => now(),
+        ];
+    
+        if (DB::table('repurchase_commission_settings')->exists()) {
+            DB::table('repurchase_commission_settings')->update($data);
+        } else {
+            $data['created_at'] = now();
+            DB::table('repurchase_commission_settings')->insert($data);
+        }
+    
+        $notify[] = ['success', 'Repurchase commission levels updated successfully.'];
+        return back()->withNotify($notify);
+    }
+
 
 
 

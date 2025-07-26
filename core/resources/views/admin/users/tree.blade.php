@@ -95,7 +95,9 @@
                         </div>
                         <div class="user-details-body text-center">
                             <h6 class="my-3">@lang('Referred By'): <span class="tree_ref"></span></h6>
+                            <h6 class="my-3">@lang('Level'): <span class="tree_level"></span></h6>
                             <table class="table-bordered table">
+
                                 <tr>
                                     <th>&nbsp;</th>
                                     <th>@lang('LEFT')</th>
@@ -131,6 +133,22 @@
         (function($) {
             $('.showDetails').on('click', function() {
                 var modal = $('#exampleModalCenter');
+
+                // Debug logs
+                console.log('Name:', $(this).data('name'));
+                console.log('Tree URL:', $(this).data('treeurl'));
+                console.log('Status:', $(this).data('status'));
+                console.log('Plan:', $(this).data('plan'));
+                console.log('Image:', $(this).data('image'));
+                console.log('Ref By:', $(this).data('ref_by'));
+                console.log('Level:', $(this).data('level'));
+                console.log('Left BV:', $(this).data('lbv'));
+                console.log('Right BV:', $(this).data('rbv'));
+                console.log('Left Free:', $(this).data('lfree'));
+                console.log('Right Free:', $(this).data('rfree'));
+                console.log('Left Paid:', $(this).data('lpaid'));
+                console.log('Right Paid:', $(this).data('rpaid'));
+
                 $('.tree_name').text($(this).data('name'));
                 $('.tree_url').attr({
                     "href": $(this).data('treeurl')
@@ -140,21 +158,24 @@
                 $('.tree_image').attr({
                     "src": $(this).data('image')
                 });
-                $('.user-details-header').removeClass('Paid');
-                $('.user-details-header').removeClass('Free');
-                $('.user-details-header').addClass($(this).data('status'));
-                $('.tree_ref').text($(this).data('refby'));
+
+                $('.user-details-header').removeClass('Paid Free').addClass($(this).data('status'));
+
+                $('.ref_by').text($(this).data('ref_by'));
+                $('.level').text($(this).data('level'));
                 $('.lbv').text($(this).data('lbv'));
                 $('.rbv').text($(this).data('rbv'));
                 $('.lpaid').text($(this).data('lpaid'));
                 $('.rpaid').text($(this).data('rpaid'));
                 $('.lfree').text($(this).data('lfree'));
                 $('.rfree').text($(this).data('rfree'));
+
                 $('#exampleModalCenter').modal('show');
             });
         })(jQuery)
     </script>
 @endpush
+
 @push('breadcrumb-plugins')
     <form class="form-inline bg--white float-right" action="{{ route('admin.users.other.tree.search') }}" method="GET">
         <div class="input-group flex-fill w-auto">

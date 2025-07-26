@@ -225,6 +225,10 @@ Route::middleware('admin')->group(function () {
         
         Route::get('label-income', 'matrics')->name('setting.matrics');
         Route::post('label-income', 'matricsSubmit')->name('setting.matrics.submit');
+        
+        Route::get('repurchase-commission', 'repurchase')->name('setting.repurchase');
+        Route::post('repurchase-commission', 'repurchaseSubmit')->name('setting.repurchase.submit');
+
 
         //Cookie
         Route::get('cookie', 'cookie')->name('setting.cookie');
@@ -378,4 +382,11 @@ Route::middleware('admin')->group(function () {
         Route::get('/{user_id?}', 'index')->name('index');
         Route::post('status/{id}', 'status')->name('status');
     });
+    
+    // Commission
+    Route::controller('CommissionController')->name('commission.')->prefix('commission')->group(function () {
+        Route::get('/{user_id?}', 'index')->name('index');
+        Route::post('status/{id}', 'status')->name('status');
+    });
+
 });

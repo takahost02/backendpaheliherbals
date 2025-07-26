@@ -13,6 +13,7 @@
                     <th>@lang('Free right')</th>
                     <th>@lang('Bv left')</th>
                     <th>@lang('Bv right')</th>
+                     <th>@lang('Income')</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -23,6 +24,7 @@
                     <td>{{$logs->free_right}}</td>
                     <td>{{getAmount($logs->bv_left)}}</td>
                     <td>{{getAmount($logs->bv_right)}}</td>
+                    <td>{{getAmount($log->total_binary_com)}}</td>
                 </tr>
                 </tbody>
             </table>

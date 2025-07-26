@@ -128,7 +128,11 @@ class ManageUsersController extends Controller
         $countries        = json_decode(file_get_contents(resource_path('views/partials/country.json')));
         $totalBvCut       = BvLog::where('user_id', $user->id)->where('trx_type', '-')->sum('amount');
         $totalOrder       = Order::where('user_id', $user->id)->count();
-        return view('admin.users.detail', compact('pageTitle', 'user', 'totalDeposit', 'totalWithdrawals', 'totalTransaction', 'countries', 'totalBvCut', 'totalOrder'));
+        
+        $totalIncome = ($user->total_ref_com ?? 0)
+                     + ($user->total_binary_com ?? 0)
+                     + ($user->total_level_com ?? 0);
+        return view('admin.users.detail', compact('pageTitle', 'user', 'totalDeposit', 'totalWithdrawals', 'totalTransaction', 'countries', 'totalBvCut', 'totalOrder', 'totalIncome'));
     }
 
 

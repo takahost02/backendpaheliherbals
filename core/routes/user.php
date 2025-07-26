@@ -70,12 +70,8 @@ Route::middleware('auth')->name('user.')->group(function () {
 
                 Route::post('search-user', 'searchUser')->name('search.user');
 
-
                 Route::post('add-device-token', 'addDeviceToken')->name('add.device.token');
 
-                //Orders
-                Route::get('matrics', 'matrics')->name('matrics');
-                
                 Route::get('orders', 'orders')->name('orders');
 
                 //purchase
@@ -111,6 +107,7 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('bv-log', 'bvlog')->name('bv.log');
                 Route::get('my-tree', 'myTree')->name('my.tree');
                 Route::get('referrals', 'myRefLog')->name('my.ref');
+                Route::get('team', 'myTeam')->name('my.team');
                 Route::get('binary-summery', 'binarySummery')->name('binary.summery');
                 Route::get('tree/{user}', 'otherTree')->name('other.tree');
                 Route::get('tree/search', 'otherTree')->name('other.tree.search');

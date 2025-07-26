@@ -23,12 +23,17 @@
                                     <tr>
 
                                         <td>
-                                            <span class="fw-bold">{{ $order->user->fullname }}</span>
-                                            <br>
-                                            <span class="small">
-                                                <a href="{{ route('admin.users.detail', $order->user_id) }}"><span>@</span>{{ $order->user->username }}</a>
-                                            </span>
+                                            @if($order->user)
+                                                <span class="fw-bold">{{ $order->user->fullname }}</span>
+                                                <br>
+                                                <span class="small">
+                                                    <a href="{{ route('admin.users.detail', $order->user_id) }}"><span>@</span>{{ $order->user->username }}</a>
+                                                </span>
+                                            @else
+                                                <span class="text-danger">User not found</span>
+                                            @endif
                                         </td>
+
                                         <td>{{ '#' . $order->trx }}</td>
 
                                         <td>{{ showAmount($order->price) }} </td>

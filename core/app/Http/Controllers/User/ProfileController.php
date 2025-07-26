@@ -85,4 +85,5 @@ class ProfileController extends Controller
             return back()->withNotify($notify);
         }
     }
+
 }

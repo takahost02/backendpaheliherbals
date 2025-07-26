@@ -11,10 +11,15 @@
                                 <div class="col-md-12">
                                     <div class="form--group">
                                         <label class="form--label">@lang('Username')</label>
-                                        <input type="text" class="form-control form--control checkUser" name="username" value="{{ old('username') }}">
+                                        <input type="text" 
+                                               class="form-control form--control" 
+                                               name="username" 
+                                               value="{{ $nextUsername }}" 
+                                               readonly>
                                         <small class="text--danger usernameExist"></small>
                                     </div>
                                 </div>
+
                                 <div class="col-md-6">
                                     <div class="form--group">
                                         <label class="form--label">@lang('Country')</label>

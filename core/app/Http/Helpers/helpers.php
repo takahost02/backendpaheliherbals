@@ -640,7 +640,10 @@ function updateFreeCount($id)
             }
             $position = getPositionLocation($id);
 
-            $extra = UserExtra::where('user_id', $posid)->first();
+            $extra = UserExtra::firstOrCreate(
+                ['user_id' => $posid],
+                ['free_left' => 0, 'free_right' => 0] 
+            );
 
             if ($position == 1) {
                 $extra->free_left += 1;

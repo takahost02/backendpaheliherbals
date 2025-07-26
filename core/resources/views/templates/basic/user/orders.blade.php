@@ -2,6 +2,11 @@
 @section('content')
     <div class="card custom--card p-0 p-0">
         <div class="card-body p-0">
+            <div class="py-3 d-flex justify-content-center">
+                <a href="{{ url('products') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-box"></i> Buy New Product
+                </a>
+            </div>
             <div class="table-responsive">
                 <table class="custom--table table">
                     <thead>

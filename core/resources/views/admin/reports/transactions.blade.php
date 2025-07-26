@@ -67,11 +67,21 @@
                                 @forelse($transactions as $trx)
                                     <tr>
                                         <td>
-                                            <span class="fw-bold">{{ $trx->user->fullname }}</span>
-                                            <br>
-                                            <span class="small"> <a
-                                                    href="{{ appendQuery('search', $trx->user->username) }}"><span>@</span>{{ $trx->user->username }}</a>
+                                            <span class="fw-bold">
+                                                {{ optional($trx->user)->fullname ?? 'User Deleted' }}
                                             </span>
+
+                                            <br>
+                                            <span class="small">
+                                                @if($trx->user)
+                                                    <a href="{{ appendQuery('search', $trx->user->username) }}">
+                                                        <span>@</span>{{ $trx->user->username }}
+                                                    </a>
+                                                @else
+                                                    <span class="text-muted">(User Deleted)</span>
+                                                @endif
+                                            </span>
+
                                         </td>
 
                                         <td>

@@ -8,6 +8,9 @@
                     <x-widget type="2" value="{{ showAmount($user->balance) }}" title="Balance" style="7" link="{{ route('admin.report.transaction', $user->id) }}" icon="las la-money-bill-wave-alt" bg="indigo" />
                 </div>
                 <div class="col-xxl-3 col-sm-6">
+                    <x-widget type="2" value="{{ showAmount($totalIncome) }}" title="Income" style="7" link="{{ route('admin.report.transaction', $user->id) }}" icon="las la-money-bill-wave-alt" bg="indigo" />
+                </div>
+                <div class="col-xxl-3 col-sm-6">
                     <x-widget type="2" value="{{ showAmount($totalDeposit) }}" title="Deposits" style="7" link="{{ route('admin.deposit.list', $user->id) }}" icon="las la-wallet" bg="8" />
                 </div>
                 <div class="col-xxl-3 col-sm-6">
@@ -26,17 +29,24 @@
                     <x-widget type="2" value="{{ showAmount($user->total_binary_com) }}" title="Total Binary Commission" style="7" link="{{ route('admin.report.binary.commission', $user->id) }}" icon="la la-tree" bg="3" />
                 </div>
                 <div class="col-xxl-3 col-sm-6">
+                    <x-widget type="2" value="{{ showAmount($user->total_level_com) }}" title="Total Level Commission" style="7" link="{{ route('admin.report.binary.commission', $user->id) }}" icon="la la-tree" bg="3" />
+                </div>
+                <div class="col-xxl-3 col-sm-6">
                     <x-widget type="2" value="{{ getAmount($totalBvCut) }}" title="Total Cut BV" style="7" link="{{ route('admin.report.bvLog', $user->id) }}?type=cutBV" icon="la la-cut" bg="4" />
                 </div>
                 <div class="col-xxl-3 col-sm-6">
-                    <x-widget type="2" value="{{ getAmount($user->userExtra->bv_left) }}" title="Left BV" style="7" link="{{ route('admin.report.bvLog', $user->id) }}?type=leftBV" icon="las la-arrow-alt-circle-left" bg="1" />
+                <x-widget type="2" value="{{ $user->level }}" title="User Level" style="7" link="{{ route('admin.users.detail', $user->id) }}" icon="la la-signal" bg="4" />
                 </div>
                 <div class="col-xxl-3 col-sm-6">
-                    <x-widget type="2" value="{{ getAmount($user->userExtra->bv_right) }}" title="Right BV" style="7" link="{{ route('admin.report.bvLog', $user->id) }}?type=rightBV" icon="las la-arrow-alt-circle-right" bg="13" />
+                    <x-widget type="2" value="{{ getAmount(optional($user->userExtra)->bv_left ?? 0) }}" title="Left BV" style="7" link="{{ route('admin.report.bvLog', $user->id) }}?type=leftBV" icon="las la-arrow-alt-circle-left" bg="1" />
                 </div>
                 <div class="col-xxl-3 col-sm-6">
-                    <x-widget type="2" value="{{ getAmount($user->userExtra->bv_left + $user->userExtra->bv_right) }}" title="Total BV" style="7" link="{{ route('admin.report.bvLog', $user->id) }}" icon="las la-arrow-alt-circle-right" bg="14" />
+                    <x-widget type="2" value="{{ getAmount(optional($user->userExtra)->bv_right ?? 0) }}" title="Right BV" style="7" link="{{ route('admin.report.bvLog', $user->id) }}?type=rightBV" icon="las la-arrow-alt-circle-right" bg="13" />
                 </div>
+                <div class="col-xxl-3 col-sm-6">
+                    <x-widget type="2" value="{{ getAmount((optional($user->userExtra)->bv_left ?? 0) + (optional($user->userExtra)->bv_right ?? 0)) }}" title="Total BV" style="7" link="{{ route('admin.report.bvLog', $user->id) }}" icon="las la-arrow-alt-circle-right" bg="14" />
+                </div>
+
                 <div class="col-xxl-3 col-sm-6">
                     <x-widget type="2" value="{{ $totalOrder }}" title="Total Orders" style="7"
                         link="{{ route('admin.order.index', $user->id) }}" icon="las la-question-circle"
@@ -143,16 +153,16 @@
                                         <span>@lang('Ref By')</span> <a href="{{ route('admin.users.detail', @$user->refBy->id) }}">{{'@'.@$user->refBy->username ?? 'N/A' }}</a>
                                     </li>
                                     <li class="list-group-item rounded-0 d-flex justify-content-between">
-                                        <span>@lang('Paid Left User ')</span> {{ $user->userExtra->paid_left }}
+                                        <span>@lang('Paid Left User ')</span> {{ $user->userExtra->paid_left ?? 0}}
                                     </li>
                                     <li class="list-group-item rounded-0 d-flex justify-content-between">
-                                        <span>@lang('Paid Right User ')</span>{{ $user->userExtra->paid_right }}
+                                        <span>@lang('Paid Right User ')</span>{{ $user->userExtra->paid_right ?? 0 }}
                                     </li>
                                     <li class="list-group-item rounded-0 d-flex justify-content-between">
-                                        <span>@lang('Free Left User')</span>{{ $user->userExtra->free_left }}
+                                        <span>@lang('Free Left User')</span>{{ $user->userExtra->free_left ?? 0 }}
                                     </li>
                                     <li class="list-group-item rounded-0 d-flex justify-content-between">
-                                        <span>@lang('Free Right User')</span>{{ $user->userExtra->free_right }}
+                                        <span>@lang('Free Right User')</span>{{ $user->userExtra->free_right ?? 0}}
                                     </li>
 
                                     <li class="list-group-item d-flex justify-content-between">

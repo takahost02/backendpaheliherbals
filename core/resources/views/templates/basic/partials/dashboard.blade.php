@@ -13,6 +13,7 @@
                         <div class="user-content">
                             <span>@lang('Welcome')</span>
                             <h5 class="name">{{ auth()->user()->fullname }}</h5>
+                            <h5 class="username" style="color: green;">{{ auth()->user()->username }}</h5>
                         </div>
                     </div>
                     <ul class="user-dashboard-tab">
@@ -29,21 +30,19 @@
                             <a class="{{menuActive('user.my.ref')}}" href="{{ route('user.my.ref') }}"> @lang('My Referrals')</a>
                         </li>
                         <li>
+                            <a class="{{menuActive('user.my.team')}}" href="{{ route('user.my.team') }}"> @lang('My Team')</a>
+                        </li>
+                        <li>
                             <a class="{{menuActive('user.my.tree')}}" href="{{ route('user.my.tree') }}">@lang('My Tree')</a>
                         </li>
                         <li>
                             <a href="{{ route('user.binary.summery') }}" class="{{menuActive('user.binary.summery')}}">
-                                @lang('Binary Summery')
+                                @lang('Binary Summary')
                             </a>
                         </li>
                         <li>
                             <a href="{{ route('user.orders') }}" class="{{menuActive('user.orders')}}">
-                                @lang('Orders')
-                            </a>
-                        </li>
-                        <li>
-                            <a href="{{ route('user.matrics') }}" class="{{menuActive('user.matrics')}}">
-                                @lang('Matrics/Label Income')
+                                @lang('My Order')
                             </a>
                         </li>
                         <li>

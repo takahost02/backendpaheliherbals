@@ -29,26 +29,30 @@ class RegisterController extends Controller
     public function showRegistrationForm(Request $request)
     {
         $pageTitle = "Register";
+    
+        if ($request->ref) {
+            $otherUserExists = User::where('username', '!=', $request->ref)->exists();
+    
+            // If NO other user exists, then set ref to the given username
+            if (!$otherUserExists) {
+                $request->merge(['ref' => $request->ref, 'position' => 'left']); // Default position
+            }
+        }
+    
         if ($request->ref && $request->position) {
-
             $refUser = User::where('username', $request->ref)->first();
             if ($refUser == null) {
                 $notify[] = ['error', 'Invalid Referral link.'];
                 return redirect()->route('home')->withNotify($notify);
             }
-
+    
             $position = $request->position == 'left' ? 1 : 2;
             $pos = getPosition($refUser->id, $position);
-
+    
             $referrer = User::find($pos['pos_id']);
-
-            if ($pos['position'] == 1)
-                $getPosition = 'Left';
-            else {
-                $getPosition = 'Right';
-            }
-
-            $joining = "<span class='help-block2'><strong class='text--success'>You are joining under $referrer->username at $getPosition  </strong></span>";
+    
+            $getPosition = $pos['position'] == 1 ? 'Left' : 'Right';
+            $joining = "<span class='help-block2'><strong class='text--success'>You are joining under $referrer->username at $getPosition</strong></span>";
         } else {
             $refUser = null;
             $joining = null;
@@ -57,10 +61,11 @@ class RegisterController extends Controller
             $referrer = null;
             $getPosition = null;
         }
-
+    
         Intended::identifyRoute();
         return view('Template::user.auth.register', compact('pageTitle', 'position', 'pos', 'refUser', 'referrer', 'getPosition', 'joining'));
     }
+
 
 
     protected function validator(array $data)
@@ -120,37 +125,47 @@ class RegisterController extends Controller
 
     protected function create(array $data)
     {
+        // Get the referrer user from 'referBy' field
         $userCheck = User::where('username', $data['referBy'])->first();
-        $pos = getPosition($userCheck->id, $data['position']);
-
-        //User Create
-        $user            = new User();
-        $user->ref_by       = $userCheck->id;
-        $user->pos_id       = $pos['pos_id'];
-        $user->position     = $pos['position'];
+    
+        // Determine the binary position
+        $pos = getPosition($userCheck->id ?? 0, $data['position'] ?? null);
+    
+        // Find the user at the exact binary position
+        $referrer = User::find($pos['pos_id']);
+    
+        // Calculate level: parent level + 1; fallback to 1 if no parent found
+        $level = $referrer ? ($referrer->level + 1) : 1;
+    
+        // Create and populate new user record
+        $user = new User();
+        $user->ref_by    = $userCheck->id ?? 0;
+        $user->pos_id    = $pos['pos_id'];
+        $user->position  = $pos['position'];
         $user->email     = strtolower($data['email']);
         $user->firstname = $data['firstname'];
         $user->lastname  = $data['lastname'];
         $user->password  = Hash::make($data['password']);
-        $user->kv = gs('kv') ? Status::NO : Status::YES;
-        $user->ev = gs('ev') ? Status::NO : Status::YES;
-        $user->sv = gs('sv') ? Status::NO : Status::YES;
-        $user->ts = Status::DISABLE;
-        $user->tv = Status::ENABLE;
+        $user->kv        = gs('kv') ? Status::NO : Status::YES;
+        $user->ev        = gs('ev') ? Status::NO : Status::YES;
+        $user->sv        = gs('sv') ? Status::NO : Status::YES;
+        $user->ts        = Status::DISABLE;
+        $user->tv        = Status::ENABLE;
+        $user->level     = $level; 
         $user->save();
-
-        $adminNotification            = new AdminNotification();
+    
+        // Notify admin of new registration
+        $adminNotification = new AdminNotification();
         $adminNotification->user_id   = $user->id;
         $adminNotification->title     = 'New member registered';
         $adminNotification->click_url = urlPath('admin.users.detail', $user->id);
         $adminNotification->save();
-
-
-        //Login Log Create
+    
+        // Log user login info
         $ip        = getRealIP();
         $exist     = UserLogin::where('user_ip', $ip)->first();
         $userLogin = new UserLogin();
-
+    
         if ($exist) {
             $userLogin->longitude    = $exist->longitude;
             $userLogin->latitude     = $exist->latitude;
@@ -165,18 +180,17 @@ class RegisterController extends Controller
             $userLogin->country_code = @implode(',', $info['code']);
             $userLogin->country      = @implode(',', $info['country']);
         }
-
-        $userAgent          = osBrowser();
-        $userLogin->user_id = $user->id;
-        $userLogin->user_ip = $ip;
-
-        $userLogin->browser = @$userAgent['browser'];
-        $userLogin->os      = @$userAgent['os_platform'];
+    
+        $userAgent              = osBrowser();
+        $userLogin->user_id     = $user->id;
+        $userLogin->user_ip     = $ip;
+        $userLogin->browser     = @$userAgent['browser'];
+        $userLogin->os          = @$userAgent['os_platform'];
         $userLogin->save();
-
-
+    
         return $user;
     }
+
 
     public function checkUser(Request $request)
     {
