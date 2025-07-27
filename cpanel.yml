@@ -1,4 +1,4 @@
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/paheliherbals/public_html/
+    - export DEPLOYPATH=/home/paheliherbals/backoffice.paheliherbals.com/
     - /bin/rsync -av --exclude='.git' ./ $DEPLOYPATH

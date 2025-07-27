@@ -1,8 +1,8 @@
 <?php
 // === Config ===
-$repoPath = '/home/paheliherbals/public_html/';
+$repoPath = '/home/paheliherbals/backoffice.paheliherbals.com/';
 $branch = 'main';
-$logFile = '/home/paheliherbals/public_html/deploy.log';
+$logFile = '/home/paheliherbals/backoffice.paheliherbals.com/deploy.log';
 
 // === Pull and Deploy ===
 $cmd = "cd $repoPath && git pull origin $branch && /bin/rsync -av  ./ $repoPath 2>&1";
