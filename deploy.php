@@ -1,8 +1,8 @@
 <?php
 // === Config ===
-$repoPath = '/home/paheliherbals/backend.paheliherbals.com/';  
+$repoPath = '/home/paheliherbals/public_html/';
 $branch = 'main';
-$logFile = '/home/paheliherbals/backend.paheliherbals.com/deploy.log';       
+$logFile = '/home/paheliherbals/public_html/deploy.log';
 
 // === Pull and Deploy ===
 $cmd = "cd $repoPath && git pull origin $branch && /bin/rsync -av  ./ $repoPath 2>&1";
@@ -19,4 +19,3 @@ if ($return_var === 0) {
     http_response_code(500);
     echo "❌ Deployment Failed.";
 }
-?>
