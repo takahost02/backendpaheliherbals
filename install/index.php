@@ -43,7 +43,7 @@ if ($action == 'requirements') {
 	} else {
 		$failed[] = "PHP version $requiredPHP is required. Your current PHP version is $currentPHP";
 	}
-	$extensions = ['BCMath', 'Ctype', 'cURL', 'DOM', 'Fileinfo', 'GD', 'JSON', 'Mbstring', 'OpenSSL', 'PCRE', 'PDO', 'pdo_mysql', 'Tokenizer', 'XML','Filter','Hash','Session','zip'];
+	$extensions = ['BCMath', 'Ctype', 'cURL', 'DOM', 'Fileinfo', 'GD', 'JSON', 'Mbstring', 'OpenSSL', 'PCRE', 'PDO', 'pdo_mysql', 'Tokenizer', 'XML', 'Filter', 'Hash', 'Session', 'zip'];
 	foreach ($extensions as $extension) {
 		if (extension_loaded($extension)) {
 			$passed[] = strtoupper($extension) . ' PHP Extension is required';
@@ -219,12 +219,12 @@ if ($action == 'result') {
 			$version =  @explode('.', $dbinfo)[0] . '.' . @explode('.', $dbinfo)[1];
 
 			if (strtolower($engine) == 'mariadb') {
-				if (!version_compare($version, '10.6','>=')) {
+				if (!version_compare($version, '10.6', '>=')) {
 					$response['error'] = 'error';
 					$response['message'] = 'MariaDB 10.6+ Or MySQL 8.0+ Required. <br> Your current version is MariaDB ' . $version;
 				}
 			} else {
-				if (!version_compare($version, '8.0','>=')) {
+				if (!version_compare($version, '8.0', '>=')) {
 					$response['error'] = 'error';
 					$response['message'] = 'MariaDB 10.6+ Or MySQL 8.0+ Required. <br> Your current version is MySQL ' . $version;
 				}
@@ -288,7 +288,7 @@ MAIL_USERNAME=null
 MAIL_PASSWORD=null
 MAIL_ENCRYPTION=null
 MAIL_FROM_ADDRESS=null
-MAIL_FROM_NAME='${APP_NAME}'
+MAIL_FROM_NAME='{$APP_NAME}'
 
 AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
@@ -300,8 +300,8 @@ PUSHER_APP_KEY=
 PUSHER_APP_SECRET=
 PUSHER_APP_CLUSTER=mt1
 
-MIX_PUSHER_APP_KEY='${PUSHER_APP_KEY}'
-MIX_PUSHER_APP_CLUSTER='${PUSHER_APP_CLUSTER}'";
+MIX_PUSHER_APP_KEY='{$PUSHER_APP_KEY}'
+MIX_PUSHER_APP_CLUSTER='{$PUSHER_APP_CLUSTER}'";
 			$envpath = dirname(__DIR__, 1) . '/core/.env';
 			file_put_contents($envpath, $envcontent);
 		} catch (Exception $e) {
@@ -367,9 +367,8 @@ $sectionTitle =  empty($action) ? 'Terms of Use' : $action;
 										echo '<h3 class="text-danger mb-3">' . $response['message'] . '</h3>';
 									} else {
 										echo '<h3 class="text-danger mb-3">Your Server is not Capable to Handle the Request.</h3>';
-									}									
+									}
 									echo '<div class="warning mt-2"><h5 class="mb-4 fw-normal">Try again. Or you can ask for support by creating a support ticket.</h5><a href="?action=information" class="theme-button choto me-1 mb-3">Try Again</a> <a href="https://viserlab.com/support" target="_blank" class="theme-button choto ms-1">create  ticket</a></div>';
-
 								}
 								echo '</div>';
 							} elseif ($action == 'information') {
@@ -500,7 +499,7 @@ $sectionTitle =  empty($action) ? 'Terms of Use' : $action;
 									function securePassword(input, inputPopup) {
 										var weakPasswordErrorElement = document.querySelector('.weak-password-error');
 										var password = input.value;
-										if(!password){
+										if (!password) {
 											return false;
 										}
 										var capital = /[ABCDEFGHIJKLMNOPQRSTUVWXYZ]/;
@@ -652,4 +651,5 @@ $sectionTitle =  empty($action) ? 'Terms of Use' : $action;
 	</footer>
 	<script src="../assets/global/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
