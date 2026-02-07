@@ -48,7 +48,7 @@ class WithdrawalController extends Controller
 
         return view('admin.withdraw.withdrawals', [
             'pageTitle'   => $pageTitle,
-            'withdrawals'=> $withdrawalData['data'],
+            'withdrawals' => $withdrawalData['data'],
             'successful' => $withdrawalData['summary']['successful'],
             'pending'    => $withdrawalData['summary']['pending'],
             'rejected'   => $withdrawalData['summary']['rejected'],
@@ -139,7 +139,7 @@ class WithdrawalController extends Controller
 
         return view('admin.withdraw.detail', [
             'pageTitle'  => $pageTitle,
-            'withdrawal'=> $withdraw,
+            'withdrawal' => $withdraw,
             'details'   => $details,
         ]);
     }

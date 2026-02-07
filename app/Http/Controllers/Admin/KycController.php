@@ -14,16 +14,16 @@ class KycController extends Controller
     public function setting()
     {
         $pageTitle = 'KYC Setting';
-        $form = Form::where('act','kyc')->first();
-        return view('admin.kyc.setting',compact('pageTitle','form'));
+        $form = Form::where('act', 'kyc')->first();
+        return view('admin.kyc.setting', compact('pageTitle', 'form'));
     }
     public function index()
-{
-    $kycs = \App\Models\UserKyc::latest()->get();
-    return view('admin.kyc.index', compact('kycs'));
-}
+    {
+        $kycs = \App\Models\UserKyc::latest()->get();
+        return view('admin.kyc.index', compact('kycs'));
+    }
 
-// List pending KYC
+    // List pending KYC
     public function pending()
     {
         $pageTitle = 'Pending KYC Verifications';
@@ -41,7 +41,7 @@ class KycController extends Controller
     {
         $pageTitle = 'KYC Details';
 
-         $kyc = \App\Models\UserKyc::with('user')->findOrFail($id);
+        $kyc = \App\Models\UserKyc::with('user')->findOrFail($id);
 
         return view('admin.kyc.show', compact('pageTitle', 'kyc'));
     }
@@ -74,11 +74,11 @@ class KycController extends Controller
     {
         $formProcessor = new FormProcessor();
         $generatorValidation = $formProcessor->generatorValidation();
-        $request->validate($generatorValidation['rules'],$generatorValidation['messages']);
-        $exist = Form::where('act','kyc')->first();
-        $formProcessor->generate('kyc',$exist,'act');
+        $request->validate($generatorValidation['rules'], $generatorValidation['messages']);
+        $exist = Form::where('act', 'kyc')->first();
+        $formProcessor->generate('kyc', $exist, 'act');
 
-        $notify[] = ['success','KYC data updated successfully'];
+        $notify[] = ['success', 'KYC data updated successfully'];
         return back()->withNotify($notify);
     }
 }

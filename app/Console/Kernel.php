@@ -15,12 +15,12 @@ class Kernel extends ConsoleKernel
     {
         $binaryMatchingService = app(BinaryMatchingService::class);
         $schedule->command('binary:match')->everyMinute();
-         $schedule->command('binary:closing')->everyMinute();
+        $schedule->command('binary:closing')->everyMinute();
 
-        $schedule->call(fn () => $binaryMatchingService->runClosing('AM'))
+        $schedule->call(fn() => $binaryMatchingService->runClosing('AM'))
             ->dailyAt('00:00');
 
-        $schedule->call(fn () => $binaryMatchingService->runClosing('PM'))
+        $schedule->call(fn() => $binaryMatchingService->runClosing('PM'))
             ->dailyAt('12:00');
     }
 

@@ -24,14 +24,14 @@ class ForgotPasswordController extends Controller
             'email' => 'required|email',
         ]);
 
-        if(!verifyCaptcha()){
-            $notify[] = ['error','Invalid captcha provided'];
+        if (!verifyCaptcha()) {
+            $notify[] = ['error', 'Invalid captcha provided'];
             return back()->withNotify($notify);
         }
 
         $admin = Admin::where('email', $request->email)->first();
         if (!$admin) {
-            $notify[] = ['error','No admin account found with this email'];
+            $notify[] = ['error', 'No admin account found with this email'];
             return back()->withNotify($notify);
         }
 
@@ -50,28 +50,29 @@ class ForgotPasswordController extends Controller
             'browser' => $adminBrowser['browser'],
             'ip' => $adminIpInfo['ip'],
             'time' => $adminIpInfo['time']
-        ],['email'],false);
+        ], ['email'], false);
 
         $email = $admin->email;
-        session()->put('pass_res_mail',$email);
+        session()->put('pass_res_mail', $email);
 
         return to_route('admin.password.code.verify');
     }
 
-    public function codeVerify(){
+    public function codeVerify()
+    {
         $pageTitle = 'Verify Code';
         $email = session()->get('pass_res_mail');
         if (!$email) {
-            $notify[] = ['error','Oops! session expired'];
+            $notify[] = ['error', 'Oops! session expired'];
             return to_route('admin.password.reset')->withNotify($notify);
         }
-        return view('admin.auth.passwords.code_verify', compact('pageTitle','email'));
+        return view('admin.auth.passwords.code_verify', compact('pageTitle', 'email'));
     }
 
     public function verifyCode(Request $request)
     {
         $request->validate(['code' => 'required']);
-        $adminPasswordReset = AdminPasswordReset::where('email', session()->get('pass_res_mail'))->where('status',Status::ENABLE)->orderBy('id','desc')->first();
+        $adminPasswordReset = AdminPasswordReset::where('email', session()->get('pass_res_mail'))->where('status', Status::ENABLE)->orderBy('id', 'desc')->first();
 
         if ($adminPasswordReset->token != $request->code) {
             $notify[] = ['error', 'Verification code does not match'];

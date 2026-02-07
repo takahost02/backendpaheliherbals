@@ -15,7 +15,7 @@ class ManualGatewayController extends Controller
     public function index()
     {
         $pageTitle = 'Manual Gateways';
-        $gateways = Gateway::manual()->orderBy('id','desc')->get();
+        $gateways = Gateway::manual()->orderBy('id', 'desc')->get();
         return view('admin.gateways.manual.list', compact('pageTitle', 'gateways'));
     }
 
@@ -29,9 +29,9 @@ class ManualGatewayController extends Controller
     public function store(Request $request)
     {
         $formProcessor = new FormProcessor();
-        $this->validation($request,$formProcessor);
+        $this->validation($request, $formProcessor);
 
-        $lastMethod = Gateway::manual()->orderBy('id','desc')->first();
+        $lastMethod = Gateway::manual()->orderBy('id', 'desc')->first();
         $methodCode = 1000;
         if ($lastMethod) {
             $methodCode = $lastMethod->code + 1;
@@ -42,7 +42,7 @@ class ManualGatewayController extends Controller
         $filename = null;
         if ($request->hasFile('image')) {
             try {
-                $filename = fileUploader($request->image,getFilePath('gateway'));
+                $filename = fileUploader($request->image, getFilePath('gateway'));
             } catch (\Exception $exp) {
                 $notify[] = ['errors', 'Image could not be uploaded'];
                 return back()->withNotify($notify);
@@ -54,7 +54,7 @@ class ManualGatewayController extends Controller
         $method->form_id = @$generate->id ?? 0;
         $method->name = $request->name;
         $method->image = $filename;
-        $method->alias = strtolower(trim(str_replace(' ','_',$request->name)));
+        $method->alias = strtolower(trim(str_replace(' ', '_', $request->name)));
         $method->status = Status::ENABLE;
         $method->gateway_parameters = json_encode([]);
         $method->supported_currencies = [];
@@ -64,7 +64,7 @@ class ManualGatewayController extends Controller
 
         $gatewayCurrency = new GatewayCurrency();
         $gatewayCurrency->name = $request->name;
-        $gatewayCurrency->gateway_alias = strtolower(trim(str_replace(' ','_',$request->name)));
+        $gatewayCurrency->gateway_alias = strtolower(trim(str_replace(' ', '_', $request->name)));
         $gatewayCurrency->currency = $request->currency;
         $gatewayCurrency->symbol = '';
         $gatewayCurrency->method_code = $methodCode;
@@ -84,30 +84,30 @@ class ManualGatewayController extends Controller
         $pageTitle = 'Edit Manual Gateway';
         $method = Gateway::manual()->with('singleCurrency')->where('alias', $alias)->firstOrFail();
         $form = $method->form;
-        return view('admin.gateways.manual.edit', compact('pageTitle', 'method','form'));
+        return view('admin.gateways.manual.edit', compact('pageTitle', 'method', 'form'));
     }
 
     public function update(Request $request, $code)
     {
         $formProcessor = new FormProcessor();
-        $this->validation($request,$formProcessor,true);
+        $this->validation($request, $formProcessor, true);
 
         $method = Gateway::manual()->where('code', $code)->firstOrFail();
 
         $filename = $method->image;
         if ($request->hasFile('image')) {
             try {
-                $filename = fileUploader($request->image,getFilePath('gateway'),old:$filename);
+                $filename = fileUploader($request->image, getFilePath('gateway'), old: $filename);
             } catch (\Exception $exp) {
                 $notify[] = ['errors', 'Image could not be uploaded'];
                 return back()->withNotify($notify);
             }
         }
 
-        $generate = $formProcessor->generate('manual_deposit',true,'id',$method->form_id);
+        $generate = $formProcessor->generate('manual_deposit', true, 'id', $method->form_id);
         $method->name = $request->name;
         $method->image = $filename;
-        $method->alias = strtolower(trim(str_replace(' ','_',$request->name)));
+        $method->alias = strtolower(trim(str_replace(' ', '_', $request->name)));
         $method->gateway_parameters = json_encode([]);
         $method->supported_currencies = [];
         $method->crypto = Status::DISABLE;
@@ -118,7 +118,7 @@ class ManualGatewayController extends Controller
         $singleCurrency = $method->singleCurrency;
         if ($singleCurrency) {
             $singleCurrency->name = $request->name;
-            $singleCurrency->gateway_alias = strtolower(trim(str_replace(' ','_',$method->name)));
+            $singleCurrency->gateway_alias = strtolower(trim(str_replace(' ', '_', $method->name)));
             $singleCurrency->currency = $request->currency;
             $singleCurrency->symbol = '';
             $singleCurrency->min_amount = $request->min_limit;
@@ -131,10 +131,10 @@ class ManualGatewayController extends Controller
 
 
         $notify[] = ['success', $method->name . ' manual gateway updated successfully'];
-        return to_route('admin.gateway.manual.edit',[$method->alias])->withNotify($notify);
+        return to_route('admin.gateway.manual.edit', [$method->alias])->withNotify($notify);
     }
 
-    private function validation($request,$formProcessor,$isUpdate = false)
+    private function validation($request, $formProcessor, $isUpdate = false)
     {
         $validation = [
             'name'           => 'required',
@@ -149,8 +149,8 @@ class ManualGatewayController extends Controller
         ];
 
         $generatorValidation = $formProcessor->generatorValidation();
-        $validation = array_merge($validation,$generatorValidation['rules']);
-        $request->validate($validation,$generatorValidation['messages']);
+        $validation = array_merge($validation, $generatorValidation['rules']);
+        $request->validate($validation, $generatorValidation['messages']);
     }
 
     public function status($id)

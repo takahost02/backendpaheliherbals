@@ -66,10 +66,11 @@ class AdminController extends Controller
         $widget['total_ref_com'] = Transaction::where('remark', 'referral_commission')->sum('amount');
         $widget['total_binary_com'] = Transaction::where('remark', 'binary_commission')->sum('amount');
 
-        return view('admin.dashboard', compact('pageTitle', 'widget', 'chart','deposit','withdrawals','bv'));
+        return view('admin.dashboard', compact('pageTitle', 'widget', 'chart', 'deposit', 'withdrawals', 'bv'));
     }
 
-    public function depositAndWithdrawReport(Request $request) {
+    public function depositAndWithdrawReport(Request $request)
+    {
 
         $diffInDays = Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date));
 
@@ -100,7 +101,7 @@ class AdminController extends Controller
             ->groupBy('created_on')
             ->get();
 
-        $invests = Transaction::where('remark','purchased_plan')
+        $invests = Transaction::where('remark', 'purchased_plan')
             ->whereDate('created_at', '>=', $request->start_date)
             ->whereDate('created_at', '<=', $request->end_date)
             ->selectRaw('SUM(amount) AS amount')
@@ -141,7 +142,8 @@ class AdminController extends Controller
         return response()->json($report);
     }
 
-    public function transactionReport(Request $request) {
+    public function transactionReport(Request $request)
+    {
 
         $diffInDays = Carbon::parse($request->start_date)->diffInDays(Carbon::parse($request->end_date));
 
@@ -154,7 +156,7 @@ class AdminController extends Controller
             $dates = $this->getAllMonths($request->start_date, $request->end_date);
         }
 
-        $plusTransactions   = Transaction::where('trx_type','+')
+        $plusTransactions   = Transaction::where('trx_type', '+')
             ->whereDate('created_at', '>=', $request->start_date)
             ->whereDate('created_at', '<=', $request->end_date)
             ->selectRaw('SUM(amount) AS amount')
@@ -163,7 +165,7 @@ class AdminController extends Controller
             ->groupBy('created_on')
             ->get();
 
-        $minusTransactions  = Transaction::where('trx_type','-')
+        $minusTransactions  = Transaction::where('trx_type', '-')
             ->whereDate('created_at', '>=', $request->start_date)
             ->whereDate('created_at', '<=', $request->end_date)
             ->selectRaw('SUM(amount) AS amount')
@@ -202,7 +204,8 @@ class AdminController extends Controller
     }
 
 
-    private function getAllDates($startDate, $endDate) {
+    private function getAllDates($startDate, $endDate)
+    {
         $dates = [];
         $currentDate = new \DateTime($startDate);
         $endDate = new \DateTime($endDate);
@@ -215,7 +218,8 @@ class AdminController extends Controller
         return $dates;
     }
 
-    private function  getAllMonths($startDate, $endDate) {
+    private function  getAllMonths($startDate, $endDate)
+    {
         if ($endDate > now()) {
             $endDate = now()->format('Y-m-d');
         }
@@ -246,7 +250,7 @@ class AdminController extends Controller
         $request->validate([
             'name' => 'required',
             'email' => 'required|email',
-            'image' => ['nullable','image',new FileTypeValidate(['jpg','jpeg','png'])]
+            'image' => ['nullable', 'image', new FileTypeValidate(['jpg', 'jpeg', 'png'])]
         ]);
         $user = auth('admin')->user();
 
@@ -292,16 +296,18 @@ class AdminController extends Controller
         return to_route('admin.password')->withNotify($notify);
     }
 
-    public function notifications(){
-        $notifications = AdminNotification::orderBy('id','desc')->with('user')->paginate(getPaginate());
-        $hasUnread = AdminNotification::where('is_read',Status::NO)->exists();
+    public function notifications()
+    {
+        $notifications = AdminNotification::orderBy('id', 'desc')->with('user')->paginate(getPaginate());
+        $hasUnread = AdminNotification::where('is_read', Status::NO)->exists();
         $hasNotification = AdminNotification::exists();
         $pageTitle = 'Notifications';
-        return view('admin.notifications',compact('pageTitle','notifications','hasUnread','hasNotification'));
+        return view('admin.notifications', compact('pageTitle', 'notifications', 'hasUnread', 'hasNotification'));
     }
 
 
-    public function notificationRead($id){
+    public function notificationRead($id)
+    {
         $notification = AdminNotification::findOrFail($id);
         $notification->is_read = Status::YES;
         $notification->save();
@@ -318,7 +324,7 @@ class AdminController extends Controller
         $arr['app_name'] = systemDetails()['name'];
         $arr['app_url'] = env('APP_URL');
         $arr['purchase_code'] = env('PURCHASECODE');
-        $url = "https://license.viserlab.com/issue/get?".http_build_query($arr);
+        $url = "https://license.viserlab.com/issue/get?" . http_build_query($arr);
         $response = CurlRequest::curlContent($url);
         $response = json_decode($response);
         if (!$response || !@$response->status || !@$response->message) {
@@ -328,14 +334,14 @@ class AdminController extends Controller
             return to_route('admin.dashboard')->withErrors($response->message);
         }
         $reports = $response->message[0];
-        return view('admin.reports',compact('reports','pageTitle'));
+        return view('admin.reports', compact('reports', 'pageTitle'));
     }
 
     public function reportSubmit(Request $request)
     {
         $request->validate([
-            'type'=>'required|in:bug,feature',
-            'message'=>'required',
+            'type' => 'required|in:bug,feature',
+            'message' => 'required',
         ]);
         $url = 'https://license.viserlab.com/issue/add';
 
@@ -344,7 +350,7 @@ class AdminController extends Controller
         $arr['purchase_code'] = env('PURCHASECODE');
         $arr['req_type'] = $request->type;
         $arr['message'] = $request->message;
-        $response = CurlRequest::curlPostContent($url,$arr);
+        $response = CurlRequest::curlPostContent($url, $arr);
         $response = json_decode($response);
         if (!$response || !@$response->status || !@$response->message) {
             return to_route('admin.dashboard')->withErrors('Something went wrong');
@@ -352,27 +358,30 @@ class AdminController extends Controller
         if ($response->status == 'error') {
             return back()->withErrors($response->message);
         }
-        $notify[] = ['success',$response->message];
+        $notify[] = ['success', $response->message];
         return back()->withNotify($notify);
     }
 
-    public function readAllNotification(){
-        AdminNotification::where('is_read',Status::NO)->update([
-            'is_read'=>Status::YES
+    public function readAllNotification()
+    {
+        AdminNotification::where('is_read', Status::NO)->update([
+            'is_read' => Status::YES
         ]);
-        $notify[] = ['success','Notifications read successfully'];
+        $notify[] = ['success', 'Notifications read successfully'];
         return back()->withNotify($notify);
     }
 
-    public function deleteAllNotification(){
+    public function deleteAllNotification()
+    {
         AdminNotification::truncate();
-        $notify[] = ['success','Notifications deleted successfully'];
+        $notify[] = ['success', 'Notifications deleted successfully'];
         return back()->withNotify($notify);
     }
 
-    public function deleteSingleNotification($id){
-        AdminNotification::where('id',$id)->delete();
-        $notify[] = ['success','Notification deleted successfully'];
+    public function deleteSingleNotification($id)
+    {
+        AdminNotification::where('id', $id)->delete();
+        $notify[] = ['success', 'Notification deleted successfully'];
         return back()->withNotify($notify);
     }
 
@@ -380,17 +389,15 @@ class AdminController extends Controller
     {
         $filePath = decrypt($fileHash);
         $extension = pathinfo($filePath, PATHINFO_EXTENSION);
-        $title = slug(gs('site_name')).'- attachments.'.$extension;
+        $title = slug(gs('site_name')) . '- attachments.' . $extension;
         try {
             $mimetype = mime_content_type($filePath);
         } catch (\Exception $e) {
-            $notify[] = ['error','File does not exists'];
+            $notify[] = ['error', 'File does not exists'];
             return back()->withNotify($notify);
         }
         header('Content-Disposition: attachment; filename="' . $title);
         header("Content-Type: " . $mimetype);
         return readfile($filePath);
     }
-
-
 }

@@ -68,7 +68,6 @@ class BinaryReportController extends Controller
                 ->withQueryString();
 
             return view('admin.binary.report', compact('logs'));
-
         } catch (\Throwable $e) {
 
             Log::error('Binary Report Load Failed', [
@@ -112,7 +111,6 @@ class BinaryReportController extends Controller
             ];
 
             return view('admin.binary.dashboard', $data);
-
         } catch (\Throwable $e) {
 
             Log::error('Binary Dashboard Error', [

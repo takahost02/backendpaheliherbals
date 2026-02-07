@@ -177,7 +177,7 @@ class OrderController extends Controller
         }
 
         if (!$includeSelf) {
-            $all = array_values(array_filter($all, fn ($r) => (int)$r->id !== $userId));
+            $all = array_values(array_filter($all, fn($r) => (int)$r->id !== $userId));
         }
 
         return $all;

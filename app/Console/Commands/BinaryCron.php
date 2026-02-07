@@ -19,17 +19,17 @@ class BinaryClosing extends Command
     {
         $now = now();
 
-if ($now->hour == 12) {
-    // 12 PM → AM session closing
-    $session = 'AM';
-    $from = Carbon::today();
-    $to   = Carbon::today()->setTime(11,59,59);
-} else {
-    // 12 AM → PM session closing
-    $session = 'PM';
-    $from = Carbon::yesterday()->setTime(12,0);
-    $to   = Carbon::yesterday()->endOfDay();
-}
+        if ($now->hour == 12) {
+            // 12 PM → AM session closing
+            $session = 'AM';
+            $from = Carbon::today();
+            $to   = Carbon::today()->setTime(11, 59, 59);
+        } else {
+            // 12 AM → PM session closing
+            $session = 'PM';
+            $from = Carbon::yesterday()->setTime(12, 0);
+            $to   = Carbon::yesterday()->endOfDay();
+        }
 
 
         $today = Carbon::today()->toDateString();

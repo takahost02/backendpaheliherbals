@@ -40,8 +40,8 @@ class WithdrawMethodController extends Controller
 
         $formProcessor = new FormProcessor();
         $generatorValidation = $formProcessor->generatorValidation();
-        $validation = array_merge($validation,$generatorValidation['rules']);
-        $request->validate($validation,$generatorValidation['messages']);
+        $validation = array_merge($validation, $generatorValidation['rules']);
+        $request->validate($validation, $generatorValidation['messages']);
 
         $generate = $formProcessor->generate('withdraw_method');
 
@@ -49,7 +49,7 @@ class WithdrawMethodController extends Controller
         $filename = null;
         if ($request->hasFile('image')) {
             try {
-                $filename = fileUploader($request->image,getFilePath('withdrawMethod'));
+                $filename = fileUploader($request->image, getFilePath('withdrawMethod'));
             } catch (\Exception $exp) {
                 $notify[] = ['errors', 'Image could not be uploaded'];
                 return back()->withNotify($notify);
@@ -80,7 +80,7 @@ class WithdrawMethodController extends Controller
         $pageTitle = 'Update Withdrawal Method';
         $method = WithdrawMethod::with('form')->findOrFail($id);
         $form = $method->form;
-        return view('admin.withdraw.edit', compact('pageTitle', 'method','form'));
+        return view('admin.withdraw.edit', compact('pageTitle', 'method', 'form'));
     }
 
     public function update(Request $request, $id)
@@ -99,22 +99,22 @@ class WithdrawMethodController extends Controller
 
         $formProcessor = new FormProcessor();
         $generatorValidation = $formProcessor->generatorValidation();
-        $validation = array_merge($validation,$generatorValidation['rules']);
-        $request->validate($validation,$generatorValidation['messages']);
+        $validation = array_merge($validation, $generatorValidation['rules']);
+        $request->validate($validation, $generatorValidation['messages']);
 
         $method = WithdrawMethod::findOrFail($id);
 
         $filename = $method->image;
         if ($request->hasFile('image')) {
             try {
-                $filename = fileUploader($request->image,getFilePath('withdrawMethod'),old:$filename);
+                $filename = fileUploader($request->image, getFilePath('withdrawMethod'), old: $filename);
             } catch (\Exception $exp) {
                 $notify[] = ['errors', 'Image could not be uploaded'];
                 return back()->withNotify($notify);
             }
         }
 
-        $generate = $formProcessor->generate('withdraw_method',true,'id',$method->form_id);
+        $generate = $formProcessor->generate('withdraw_method', true, 'id', $method->form_id);
         $method->form_id        = @$generate->id ?? 0;
         $method->name           = $request->name;
         $method->image          = $filename;
@@ -137,5 +137,4 @@ class WithdrawMethodController extends Controller
     {
         return WithdrawMethod::changeStatus($id);
     }
-
 }

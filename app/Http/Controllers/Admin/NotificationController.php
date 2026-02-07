@@ -146,7 +146,7 @@ class NotificationController extends Controller
     {
         $method = $request->email_method;
         $config = ['name' => $method];
-    
+
         if ($method === 'smtp') {
             $request->validate([
                 'smtp_host'        => 'required|string',
@@ -158,7 +158,7 @@ class NotificationController extends Controller
                 'smtp_emailfrom'   => 'required|email',
                 'smtp_replyto'     => 'required|email',
             ]);
-    
+
             $config += [
                 'host'        => $request->smtp_host,
                 'port'        => $request->smtp_port,
@@ -187,11 +187,11 @@ class NotificationController extends Controller
             $notify[] = ['error', 'Invalid email method'];
             return back()->withNotify($notify);
         }
-    
+
         $general = gs();
         $general->mail_config = $config;
         $general->save();
-    
+
         $notify[] = ['success', 'Email configuration updated'];
         return back()->withNotify($notify);
     }
@@ -202,16 +202,16 @@ class NotificationController extends Controller
         $request->validate([
             'email' => 'required|email'
         ]);
-    
+
         $config = gs('mail_config');
         $receiverName = explode('@', $request->email)[0];
-    
+
         // Validate configuration first
         if (empty($config->name)) {
             $notify[] = ['error', 'Email configuration is not set'];
             return back()->withNotify($notify);
         }
-    
+
         // Configuration-specific validation
         if ($config->name == 'smtp') {
             $requiredFields = ['host', 'port', 'username', 'password', 'email_from'];
@@ -222,25 +222,25 @@ class NotificationController extends Controller
                 }
             }
         }
-    
+
         if ($config->name == 'sendgrid' && empty($config->appkey)) {
             $notify[] = ['error', 'SendGrid API key is missing'];
             return back()->withNotify($notify);
         }
-    
+
         if ($config->name == 'mailjet' && (empty($config->public_key) || empty($config->secret_key))) {
             $notify[] = ['error', 'Mailjet API keys are missing'];
             return back()->withNotify($notify);
         }
-    
+
         try {
             // Use the html() method instead of setBody() for plain text emails
             \Illuminate\Support\Facades\Mail::send([], [], function ($message) use ($request, $config) {
                 $message->to($request->email)
-                       ->subject(strtoupper($config->name) . ' SMTP Test')
-                       ->html('SMTP Test Mail was sent successfully.');
+                    ->subject(strtoupper($config->name) . ' SMTP Test')
+                    ->html('SMTP Test Mail was sent successfully.');
             });
-    
+
             $notify[] = ['success', 'Test email sent to ' . $request->email];
         } catch (\Exception $e) {
             \Log::error('Test email failed', [
@@ -248,9 +248,9 @@ class NotificationController extends Controller
                 'config' => (array) $config,
                 'trace' => $e->getTraceAsString()
             ]);
-            
+
             $errorMessage = 'Email failed: ' . $e->getMessage();
-            
+
             // Provide more user-friendly messages for common errors
             if (str_contains($e->getMessage(), 'Connection could not be established')) {
                 $errorMessage = 'Could not connect to mail server. Please check your SMTP settings.';
@@ -259,10 +259,10 @@ class NotificationController extends Controller
             } elseif (str_contains($e->getMessage(), 'Failed to authenticate on SMTP server')) {
                 $errorMessage = 'SMTP authentication failed. Check your credentials.';
             }
-            
+
             $notify[] = ['error', $errorMessage];
         }
-    
+
         return back()->withNotify($notify);
     }
 

@@ -52,7 +52,7 @@ class ResetPasswordController extends Controller
             'browser' => $browser['browser'],
             'ip' => $ipInfo['ip'],
             'time' => $ipInfo['time']
-        ],['email'],false);
+        ], ['email'], false);
 
         $notify[] = ['success', 'Password changed'];
         return to_route('admin.login')->withNotify($notify);

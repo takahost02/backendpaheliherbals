@@ -20,7 +20,7 @@ class AutomaticGatewayController extends Controller
 
     public function edit($alias)
     {
-        $gateway = Gateway::automatic()->with('currencies','currencies.method')->where('alias', $alias)->firstOrFail();
+        $gateway = Gateway::automatic()->with('currencies', 'currencies.method')->where('alias', $alias)->firstOrFail();
         $pageTitle = 'Update Gateway';
 
         $supportedCurrencies = collect($gateway->supported_currencies)->except($gateway->currencies->pluck('currency'));
@@ -41,7 +41,7 @@ class AutomaticGatewayController extends Controller
     public function update(Request $request, $code)
     {
 
-        $gateway = Gateway::where('code',$code)->firstOrFail();
+        $gateway = Gateway::where('code', $code)->firstOrFail();
         $this->gatewayValidator($request)->validate();
         $this->gatewayCurrencyValidator($request, $gateway)->validate();
 
@@ -54,7 +54,7 @@ class AutomaticGatewayController extends Controller
         $filename = $gateway->image;
         if ($request->hasFile('image')) {
             try {
-                $filename = fileUploader($request->image,getFilePath('gateway'),old:$filename);
+                $filename = fileUploader($request->image, getFilePath('gateway'), old: $filename);
             } catch (\Exception $exp) {
                 $notify[] = ['errors', 'Image could not be uploaded'];
                 return back()->withNotify($notify);
@@ -103,7 +103,7 @@ class AutomaticGatewayController extends Controller
     public function remove($id)
     {
         $gatewayCurrency = GatewayCurrency::find($id);
-        fileManager()->removeFile(getFilePath('gateway').'/'.$gatewayCurrency->image);
+        fileManager()->removeFile(getFilePath('gateway') . '/' . $gatewayCurrency->image);
         $gatewayCurrency->delete();
         $notify[] = ['success', 'Gateway currency removed successfully'];
         return back()->withNotify($notify);
@@ -180,5 +180,4 @@ class AutomaticGatewayController extends Controller
     {
         return $name ?? $default;
     }
-
 }

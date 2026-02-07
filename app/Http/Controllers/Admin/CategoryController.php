@@ -41,5 +41,4 @@ class CategoryController extends Controller
     {
         return Category::changeStatus($id);
     }
-
 }
