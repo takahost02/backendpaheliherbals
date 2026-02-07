@@ -62,8 +62,8 @@ class BinaryMatchingService
             'amount'       => $income,
             'post_balance' => $user->balance,
             'trx_type'     => '+',
-            'remark'       => 'binary_income',
-            'details'      => "Binary Income ($session Closing) - {$pairAllowed} pairs",
+            'remark'       => 'matching_income',
+            'details'      => "Matching Income ($session Closing) - {$pairAllowed} pairs",
             'trx'          => getTrx(),
         ]);
 
@@ -74,8 +74,8 @@ class BinaryMatchingService
             'user_id'  => $user->id,
             'amount'   => 0,
             'trx_type' => '+',
-            'remark'   => 'binary_pair_log',
-            'details'  => "Binary Pair Logged ({$pairAllowed} pairs) Session: {$session}",
+            'remark'   => 'matching_pair_log',
+            'details'  => "Matching Pair Logged ({$pairAllowed} pairs) Session: {$session}",
             'trx'      => getTrx(),
         ]);
 
