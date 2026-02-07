@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\User;
 use App\Models\BvLog;
 use App\Models\Transaction;
-use App\Models\BinaryIncomeLog;
 use Carbon\Carbon;
 
 class BinaryMatchingService
@@ -29,9 +28,7 @@ class BinaryMatchingService
 
         if ($left == 0 || $right == 0) return;
 
-        // =========================
-        // FIRST MATCH RULE (1:2 or 2:1)
-        // =========================
+        // FIRST MATCH RULE
         if (!$this->isValidFirstMatch($left, $right)) {
             return;
         }
@@ -40,17 +37,15 @@ class BinaryMatchingService
         // CALCULATE PAIRS
         // =========================
         $possiblePairs = min($left, $right);
-        $pairAllowed   = min($possiblePairs, SESSION_CAPPING);
+
+        $pairIncome = config('mlm.binary.pair_income');
+        $sessionCap = config('mlm.binary.session_capping');
+
+        $pairAllowed = min($possiblePairs, $sessionCap);
 
         if ($pairAllowed <= 0) return;
 
-        //$income = $pairAllowed * BINARY_PAIR_INCOME;
-        $pairIncome    = config('mlm.binary.pair_income');
-        $sessionCap    = config('mlm.binary.session_capping');
-        
-        $pairAllowed   = min($possiblePairs, $sessionCap);
-        $income        = $pairAllowed * $pairIncome;
-
+        $income = $pairAllowed * $pairIncome;
 
         // =========================
         // UPDATE USER WALLET
@@ -60,7 +55,7 @@ class BinaryMatchingService
         $user->save();
 
         // =========================
-        // TRANSACTION ENTRY
+        // TRANSACTION ENTRY (Binary Income)
         // =========================
         Transaction::create([
             'user_id'      => $user->id,
@@ -68,19 +63,20 @@ class BinaryMatchingService
             'post_balance' => $user->balance,
             'trx_type'     => '+',
             'remark'       => 'binary_income',
-            'details'      => "Binary Income ($session Closing)",
+            'details'      => "Binary Income ($session Closing) - {$pairAllowed} pairs",
             'trx'          => getTrx(),
         ]);
 
         // =========================
-        // BINARY LOG
+        // EXTRA LOG USING TRANSACTION
         // =========================
-        BinaryIncomeLog::create([
-            'user_id' => $user->id,
-            'pair'    => $pairAllowed,
-            'amount'  => $income,
-            'session' => $session,
-            'date'    => now()->toDateString(),
+        Transaction::create([
+            'user_id'  => $user->id,
+            'amount'   => 0,
+            'trx_type' => '+',
+            'remark'   => 'binary_pair_log',
+            'details'  => "Binary Pair Logged ({$pairAllowed} pairs) Session: {$session}",
+            'trx'      => getTrx(),
         ]);
 
         // =========================
