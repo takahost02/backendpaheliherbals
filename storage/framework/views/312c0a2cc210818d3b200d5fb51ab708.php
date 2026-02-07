@@ -1,0 +1,25 @@
+<?php $__env->startSection('panel'); ?>
+   
+
+    <?php echo $__env->make($activeTemplate.'layouts.breadcrumb', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+
+    <?php echo $__env->make($activeTemplate.'partials.dashboard', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+
+<script src="<?php echo e(asset('assets/global/js/bootstrap.bundle.min.js')); ?>"></script>
+
+
+<?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('script'); ?>
+    <script>
+        (function($) {
+            "use strict";
+            window.addEventListener('scroll', function(){
+              var header = document.querySelector('header');
+              header.classList.toggle('sticky', window.scrollY > 0);
+            });   
+        })(jQuery);
+    </script>
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make($activeTemplate . 'layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH /home/paheliherbals/newplan.paheliherbals.com/core/resources/views/templates/basic/layouts/master.blade.php ENDPATH**/ ?>

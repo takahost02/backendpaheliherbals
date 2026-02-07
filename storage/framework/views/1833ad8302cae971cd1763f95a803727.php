@@ -1,0 +1,1 @@
+<?php /**PATH /home/paheliherbals/newplan.paheliherbals.com/core/resources/views/templates/basic/sections/team.blade.php ENDPATH**/ ?>
