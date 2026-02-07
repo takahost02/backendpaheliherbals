@@ -27,7 +27,7 @@ class CronController extends Controller
             $crons->where('alias', request()->alias);
         } else {
             $crons->where('next_run', '<', now())
-                  ->where('is_running', Status::YES);
+                ->where('is_running', Status::YES);
         }
 
         $crons = $crons->get();
