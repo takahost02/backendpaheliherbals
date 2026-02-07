@@ -1,0 +1,408 @@
+{
+    "banner": {
+    "builder": true,
+    "no_selection": true,
+    "name": "Banner",
+    "content": {
+        "images": {
+            "image_1": {
+                "size": "1920x1280"
+            },
+            "image_2": {
+                "size": "1920x1280"
+            },
+            "image_3": {
+                "size": "1920x1280"
+            },
+            "image_4": {
+                "size": "1920x1280"
+            },
+            "image_5": {
+                "size": "1920x1280"
+            }
+        },
+        "heading": "text",
+        "sub_heading": "text",
+        "left_button": "text",
+        "left_button_link": "text",
+        "right_button": "text",
+        "right_button_link": "text"
+        }
+    },
+
+    "about": {
+        "builder": true,
+        "name": "About Us",
+        "content": {
+            "images": {
+                "about_image": {
+                    "size": "700x700"
+                }
+            },
+            "heading": "text",
+            "sub_heading": "text",
+            "description": "textarea",
+            "button_text": "text",
+            "button_url": "text"
+        }
+    },
+    "service": {
+        "builder": true,
+        "name": "Service",
+        "content": {
+            "heading": "text",
+            "sub_heading": "text"
+        },
+        "element": {
+            "icon": "icon",
+            "title": "text",
+            "description": "textarea",
+            "modal": true
+        }
+    },
+    "how_it_works": {
+        "builder": true,
+        "name": "How It's Works",
+        "content": {
+            "heading": "text",
+            "sub_heading": "text"
+        },
+        "element": {
+            "icon": "icon",
+            "title": "text",
+            "description": "textarea",
+            "modal": true
+        }
+    },
+    "plan": {
+        "builder": true,
+        "name": "Plan",
+        "content": {
+            "images": {
+                "background_image": {
+                    "size": "700x478"
+                }
+            },
+            "heading": "text",
+            "sub_heading": "text"
+        }
+    },
+    "refer": {
+        "builder": true,
+        "name": "Refer",
+        "content": {
+            "heading": "text",
+            "description": "text",
+            "button_text": "text",
+            "button_url": "text",
+            "images": {
+                "background_image": {
+                    "size": "1900x1200"
+                },
+                "refer_image": {
+                    "size": "650x580"
+                }
+            }
+        }
+    },
+    "transaction": {
+        "builder": true,
+        "name": "Transaction",
+        "content": {
+            "heading": "text",
+            "sub_heading": "text"
+        }
+    },
+    "team": {
+        "builder": true,
+        "name": "Team",
+        "content": {
+            "heading": "text",
+            "sub_heading": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "350x350"
+                }
+            },
+            "name": "text",
+            "designation": "text",
+            "facebook_link": "text",
+            "twitter_link": "text",
+            "instagram_link": "text",
+            "vimeo_link": "text",
+            "modal": false
+        }
+    },
+    "product": {
+        "builder": true,
+        "name": "Product",
+        "content": {
+            "heading": "text",
+            "sub_heading": "text"
+        }
+    },
+    "testimonial": {
+        "builder": true,
+        "name": "Testimonial",
+        "content": {
+            "heading": "text",
+            "sub_heading": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "150x150"
+                }
+            },
+            "author": "text",
+            "designation": "text",
+            "quote": "textarea",
+            "modal": true
+        }
+    },
+    "blog": {
+        "builder": true,
+        "name": "Blog",
+        "content": {
+            "heading": "text",
+            "sub_heading": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "820x540",
+                    "thumb": "410x270"
+                }
+            },
+            "title": "text",
+            "slug": "title",
+            "description": "textarea-nic",
+            "modal": false,
+            "seo": true
+        }
+    },
+    "faq": {
+        "builder": true,
+        "name": "FAQ",
+        "content": {
+            "heading": "text",
+            "sub_heading": "text"
+        },
+        "element": {
+            "question": "text",
+            "answer": "textarea",
+            "modal": false
+        }
+    },
+    "breadcrumb": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Breadcrumb",
+        "content": {
+            "images": {
+                "background_image": {
+                    "size": "1920x1280"
+                }
+            }
+        }
+    },
+    "social_icon": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Social Icons",
+        "element": {
+            "title": "text",
+            "social_icon": "icon",
+            "url": "text",
+            "modal": true
+        }
+    },
+    "contact_us": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Contact Us",
+        "content": {
+            "images": {
+                "image": {
+                    "size": "700x600"
+                }
+            },
+            "title": "text",
+            "map_iframe_url": "text"
+        },
+        "element": {
+            "images": {
+                "image": {
+                    "size": "55x55"
+                }
+            },
+            "title": "text",
+            "content": "text",
+            "modal": true
+        }
+    },
+    "footer_section": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Footer",
+        "content": {
+            "website_footer_address": "text",
+            "website_footer_phone_number": "text",
+            "website_footer_email": "text",
+            "description": "text"
+        }
+    },
+    "login": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Login",
+        "content": {
+            "images": {
+                "login_image": {
+                    "size": "1100x750"
+                }
+            },
+            "title": "text",
+            "heading": "text",
+            "sub_heading": "text"
+        }
+    },
+    "register": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Register",
+        "content": {
+            "images": {
+                "register_image": {
+                    "size": "1100x750"
+                }
+            },
+            "title": "text",
+            "heading": "text",
+            "sub_heading": "text"
+        }
+    },
+    "policy_pages": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Policy Pages",
+        "hide_builder": true,
+        "element": {
+            "title": "text",
+            "slug": "title",
+            "details": "textarea-nic",
+            "modal": false,
+            "seo": true
+        }
+    },
+    "kyc": {
+        "builder": true,
+        "no_selection": true,
+        "name": "KYC Content",
+        "content": {
+            "required": "text",
+            "pending": "text",
+            "reject": "text"
+        }
+    },
+    "banned": {
+        "builder": true,
+        "no_selection": true,
+        "name": "Banned User",
+        "content": {
+            "images": {
+                "image": {
+                    "size": "360x370"
+                }
+            }
+        }
+    },
+    "legal": {
+        "builder": true,
+        "name": "Legal",
+        "content": {
+            "images": {
+                "gallery_image_1": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 1",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_2": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 2",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_3": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 3",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_4": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 4",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_5": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 5",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_6": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 6",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_7": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 7",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_8": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 8",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_9": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 9",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_10": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 10",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_11": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 11",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                },
+                "gallery_image_12": {
+                    "type": "file",
+                    "size": "2480x3508",
+                    "label": "Gallery Image 12",
+                    "help": "Upload A4-sized image. Recommended resolution: 2480x3508 pixels at 300 ppi"
+                }
+            }
+        }
+    }
+
+
+
+
+
+
+}
