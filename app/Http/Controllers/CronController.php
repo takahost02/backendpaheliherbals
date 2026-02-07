@@ -78,7 +78,7 @@ class CronController extends Controller
             $pair = 2;
             $half = 100;
 
-            $service-> ($user, $pair, $half, false);
+            $service($user, $pair, $half, false);
         }
 
         return 'Binary Matching Done';
