@@ -139,9 +139,38 @@ class CronController extends Controller
         $gs = gs();
         $now = Carbon::now();
         $today = $now->toDateString();
-        $hour = (int) $now->format('H');
 
-        $half = ($hour < 12) ? 'second' : 'first';
+        /*
+    |--------------------------------------------------------------------------
+    | CONFIGURABLE BINARY TIME SLOTS
+    |--------------------------------------------------------------------------
+    | Change these anytime:
+    | 'first'  => '12:00'   (12 PM)
+    | 'second' => '00:00'   (12 AM)
+    |
+    | Example Future:
+    | 'first'  => '13:00'
+    | 'second' => '03:00'
+    */
+        $binarySlots = [
+            'first'  => '14:00',
+            'second' => '02:00',
+        ];
+
+        // Determine active slot
+        $currentTime = $now->format('H:i');
+        $half = null;
+
+        foreach ($binarySlots as $slotName => $slotTime) {
+            if ($currentTime >= $slotTime) {
+                $half = $slotName;
+            }
+        }
+
+        // fallback if nothing matched
+        if (!$half) {
+            $half = array_key_last($binarySlots);
+        }
 
         if (!$force) {
             $alreadyRun = DB::table('binary_logs')
@@ -216,7 +245,6 @@ class CronController extends Controller
             // PAYOUT (Binary Disabled)
             // ========================
             $masterIncome = $pair * 750;
-            $binaryBonus  = 0; // ❌ DISABLED
 
             $user->balance += $masterIncome;
             $user->save();
