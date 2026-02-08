@@ -161,15 +161,6 @@ class CronController extends Controller
             $user = User::find($uex->user_id);
             if (!$user) continue;
 
-            // LOG EVERY RUN (pair = 0) TO TRACK CRON
-            DB::table('binary_logs')->insert([
-                'user_id'    => $user->id,
-                'date'       => $today,
-                'half'       => $half,
-                'pair'       => 0,
-                'commission' => 0,
-                'created_at' => now()
-            ]);
         }
 
         // PREVENT DUPLICATE RUN
