@@ -97,6 +97,8 @@ class PlanController extends Controller
 
         // Referral Commission (direct sponsor commission)
         $this->referralCommission($user->id, $plan->id, $details);
+        // Matching Commission Distribution
+        $this->matchingCommission($user->id, $plan->bv, $details);
 
         $notify[] = ['success', 'Purchased ' . $plan->name . ' successfully'];
         return back()->withNotify($notify);
@@ -358,6 +360,78 @@ class PlanController extends Controller
         $emptyMessage = 'No data found';
         return view('Template::user.transactions', compact('pageTitle', 'logs', 'emptyMessage'));
     }
+
+    protected function matchingCommission($userId, $planBV, $details)
+    {
+        $bvPrice = DB::table('general_settings')->value('bv_price') ?? 0;
+        if ($bvPrice <= 0) return;
+
+        // Get uplines in placement tree (exclude self)
+        $upline = $this->getPlacementUplineFor($userId, false);
+
+        foreach ($upline as $u) {
+            $userExtra = UserExtra::firstOrCreate(
+                ['user_id' => $u->id],
+                ['paid_left' => 0, 'paid_right' => 0, 'free_left' => 0, 'free_right' => 0]
+            );
+
+            // Determine which side to increment
+            if ($userExtra->left_bv ?? 0 >= $userExtra->right_bv ?? 0) {
+                $userExtra->paid_right += $planBV;
+            } else {
+                $userExtra->paid_left += $planBV;
+            }
+
+            // Calculate eligible pairs
+            $pairs = min($userExtra->paid_left, $userExtra->paid_right);
+
+            // Daily cap: 4 pairs (2 @ 12 PM + 2 @ 12 AM)
+            $dailyCap = 4;
+            $paidToday = $userExtra->paid_left + $userExtra->paid_right; // approximation
+            $eligiblePairs = min($pairs, $dailyCap - $paidToday);
+            if ($eligiblePairs <= 0) continue;
+
+            $commissionAmount = $eligiblePairs * $bvPrice;
+
+            // Update UserExtra to subtract used BV
+            if ($userExtra->paid_left >= $userExtra->paid_right) {
+                $userExtra->paid_right -= $eligiblePairs;
+            } else {
+                $userExtra->paid_left -= $eligiblePairs;
+            }
+
+            $userExtra->save();
+
+            // Add to user's balance
+            $uplineUser = User::find($u->id);
+            if (!$uplineUser) continue;
+
+            $uplineUser->balance += $commissionAmount;
+            $uplineUser->total_binary_com += $commissionAmount;
+            $uplineUser->save();
+
+            // Create transaction
+            Transaction::create([
+                'user_id'      => $uplineUser->id,
+                'amount'       => $commissionAmount,
+                'post_balance' => $uplineUser->balance,
+                'trx_type'     => '+',
+                'trx'          => getTrx(),
+                'remark'       => 'matching_commission',
+                'details'      => 'Matching Commission from ' . auth()->user()->username . '. ' . $details,
+            ]);
+
+            // Log
+            CommissionLog::create([
+                'user_id'         => $uplineUser->id,
+                'type'            => 'matching',
+                'amount'          => $commissionAmount,
+                'details'         => 'Matching Commission from ' . auth()->user()->username . '. ' . $details,
+                'source_username' => auth()->user()->username,
+            ]);
+        }
+    }
+
 
     public function binarySummery()
     {
