@@ -230,17 +230,6 @@ $log = $logs ?? null;
         </div>
     </div>
 
-    {{-- COMMISSION --}}
-    <!--<div class="col-md-3">
-        <div class="card custom--card text-center border-success">
-            <div class="card-body">
-                <div class="icon-box bg-success"><i class="las la-money-bill-wave"></i></div>
-                <h6>@lang('Binary Commission')</h6>
-                <h4 class="text-success">₹ {{ number_format($binaryCommission,2) }}</h4>
-            </div>
-        </div>
-    </div>-->
-
     {{-- MONTHLY --}}
     <div class="col-md-6">
         <div class="card custom--card text-center">

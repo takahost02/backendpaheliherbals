@@ -364,7 +364,7 @@ class PlanController extends Controller
         $log  = User::where('id', auth()->id())->firstOrFail();
     
         // Get bv_price from general_settings
-        $general = \DB::table('general_settings')->select('bv_price')->first();
+        $general = DB::table('general_settings')->select('bv_price')->first();
     
         // Calculate binary commission
         $minPaidSide = min($logs->paid_left, $logs->paid_right);

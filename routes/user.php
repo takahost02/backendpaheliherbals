@@ -6,11 +6,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Http\Controllers\User\RewardController;
 
 Route::middleware(['auth'])->name('user.')->group(function () {
-        Route::get('rewards', [RewardController::class, 'index'])->name('rewards.index');
-
-    });
-    Route::get('/my-income', [UserController::class, 'myIncome'])->name('user.my.income');
-    Route::get('/dashboard', [UserController::class, 'home'])->name('user.home');
+    Route::get('rewards', [RewardController::class, 'index'])->name('rewards.index');
+});
+Route::get('/my-income', [UserController::class, 'myIncome'])->name('user.my.income');
+Route::get('/dashboard', [UserController::class, 'home'])->name('user.home');
 
 
 Route::get('/earnings/filter', [DashboardController::class, 'filter'])->name('earnings.filter');
@@ -20,7 +19,8 @@ Route::get('/earnings/export/excel', [DashboardController::class, 'exportExcel']
 
 
 
-Route::get('user/data', [UserController::class, 'userData'])->name('user.data');Route::get('rewards-income', [RewardController::class,'index'])
+Route::get('user/data', [UserController::class, 'userData'])->name('user.data');
+Route::get('rewards-income', [RewardController::class, 'index'])
     ->name('user.reward.index');
 
 
@@ -38,7 +38,7 @@ Route::get('welcome-letter', [UserController::class, 'welcomeLetter'])
 // Welcome Letter Download
 /*Route::get('welcome-letter/download', [UserController::class, 'downloadWelcomeLetter'])
     ->name('user.welcome.letter.download');*/
-    Route::get('welcome-letter/pdf', [UserController::class, 'welcomeLetterPdf'])
+Route::get('welcome-letter/pdf', [UserController::class, 'welcomeLetterPdf'])
     ->name('user.welcome.letter.pdf');
 
 
@@ -75,7 +75,7 @@ Route::middleware('auth')->name('user.')->group(function () {
     Route::get('user-data', 'User\UserController@userData')->name('data');
     Route::post('user-data-submit', 'User\UserController@userDataSubmit')->name('data.submit');
     Route::post('user/data/submit', [UserController::class, 'userDataSubmit'])
-    ->name('user.data.submit');
+        ->name('user.data.submit');
 
 
     //authorization
@@ -162,31 +162,31 @@ Route::middleware('auth')->name('user.')->group(function () {
                 Route::get('refferal-income', 'RefferalIncome')->name('refferal.income');
                 Route::get('sponsor-income', 'SponsorIncome')->name('sponsor.income');
                 Route::get('matrix-income', [BinaryController::class, 'matrixIncome'])
-                        ->name('user.matrix.income');
+                    ->name('user.matrix.income');
 
                 Route::get('user-tree-{user?}', 'otherTree')->name('other.tree');
-                
-                
             });
         });
-        
+
         // history
         Route::get('binary/history', 'BinaryController@history')
-    ->name('user.binary.history');
-    
- Route::get('binary-summery', [UserController::class, 'binarySummery'])
+            ->name('user.binary.history');
+
+        Route::get('binary-summery', [UserController::class, 'binarySummery'])
             ->name('binary.summery');
 
-Route::controller(BinaryController::class)->group(function () {
-    Route::get('binary/summary', 'summary')->name('user.binary.summary');
-    Route::get('binary/income', 'income')->name('user.binary.income');
-    Route::get('binary/bv-log', 'bvLog')->name('user.binary.bvlog');
-});
+        Route::controller(BinaryController::class)->group(function () {
+            Route::get('binary/summary', 'summary')->name('user.binary.summary');
+            Route::get('binary/income', 'income')->name('user.binary.income');
+            Route::get('binary/bv-log', 'bvLog')->name('user.binary.bvlog');
+        });
 
-Route::get('binary/weekly-pdf', 'BinaryController@weeklyPdf')
-    ->name('user.binary.weekly.pdf');
-    
-    Route::get('/maintenance', function () {return view('maintenance');})->name('maintenance');
+        Route::get('binary/weekly-pdf', 'BinaryController@weeklyPdf')
+            ->name('user.binary.weekly.pdf');
+
+        Route::get('/maintenance', function () {
+            return view('maintenance');
+        })->name('maintenance');
 
 
 
