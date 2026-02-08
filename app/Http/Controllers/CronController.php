@@ -230,15 +230,6 @@ class CronController extends Controller
                 'details' => "Master Matching Income ({$pair} pairs)"
             ]);
 
-            DB::table('binary_logs')->insert([
-                'user_id' => $user->id,
-                'date' => $today,
-                'half' => $half,
-                'pair' => $pair,
-                'commission' => 0,
-                'created_at' => now()
-            ]);
-
             // ========================
             // BV DEDUCTION
             // ========================
