@@ -141,54 +141,38 @@ class CronController extends Controller
         $today = $now->toDateString();
         $currentTime = $now->format('H:i');
 
-        /*
-    |--------------------------------------------------------------------------
-    | BINARY MATCHING TIME SLOTS
-    |--------------------------------------------------------------------------
-    */
+        // BINARY MATCHING TIME SLOTS
         $binarySlots = [
             'first'  => '04:35', // Day Slot
             'second' => '16:35', // Night Slot
         ];
 
-        // ===============================
         // DETERMINE CURRENT HALF
-        // ===============================
-        $half = null;
-        if ($currentTime >= $binarySlots['first'] && $currentTime < $binarySlots['second']) {
-            $half = 'first';
-        } else {
-            $half = 'second';
-        }
+        $half = ($currentTime >= $binarySlots['first'] && $currentTime < $binarySlots['second'])
+            ? 'first'
+            : 'second';
 
-        // ===============================
         // GET USERS WITH BV
-        // ===============================
         $users = UserExtra::where('bv_left', '>', 0)
             ->where('bv_right', '>', 0)
             ->get();
 
         foreach ($users as $uex) {
-
             $user = User::find($uex->user_id);
             if (!$user) continue;
 
-            // ===============================
             // LOG EVERY RUN (pair = 0) TO TRACK CRON
-            // ===============================
             DB::table('binary_logs')->insert([
                 'user_id'    => $user->id,
                 'date'       => $today,
                 'half'       => $half,
-                'pair'       => 0,             // no pairs yet, just logging cron run
+                'pair'       => 0,
                 'commission' => 0,
                 'created_at' => now()
             ]);
         }
 
-        // ===============================
-        // PREVENT DUPLICATE RUN (FOR PAID PAIRS)
-        // ===============================
+        // PREVENT DUPLICATE RUN
         if (!$force) {
             $alreadyRun = DB::table('binary_logs')
                 ->where('date', $today)
@@ -201,9 +185,11 @@ class CronController extends Controller
             }
         }
 
-        // ===============================
-        // ORIGINAL MATCHING LOGIC STARTS HERE
-        // ===============================
+        // FETCH BV PRICE
+        $general = DB::table('general_settings')->select('bv_price')->first();
+        $bvPrice = $general->bv_price ?? 0;
+
+        // ORIGINAL MATCHING LOGIC
         foreach ($users as $uex) {
 
             $user = User::find($uex->user_id);
@@ -227,7 +213,6 @@ class CronController extends Controller
             $remainingHalf  = max(0, $gs->binary_half_cap - $halfPair);
 
             $allowedPair = min($remainingDaily, $remainingHalf);
-
             if ($allowedPair <= 0) continue;
 
             // BV CALCULATION
@@ -237,14 +222,11 @@ class CronController extends Controller
 
             // FIRST MATCH (2:1 or 1:2)
             if ($user->first_binary_completed == 0) {
-
                 if ($leftBV >= (2 * $gs->total_bv) && $rightBV >= $gs->total_bv) {
-
                     $pair = 1;
                     $leftBV  -= (2 * $gs->total_bv);
                     $rightBV -= $gs->total_bv;
                 } elseif ($rightBV >= (2 * $gs->total_bv) && $leftBV >= $gs->total_bv) {
-
                     $pair = 1;
                     $leftBV  -= $gs->total_bv;
                     $rightBV -= (2 * $gs->total_bv);
@@ -261,27 +243,25 @@ class CronController extends Controller
                 floor($leftBV / $gs->total_bv),
                 floor($rightBV / $gs->total_bv)
             );
-
             $pair += $normalPair;
 
             // APPLY CAP
             $pair = min($pair, $allowedPair);
-
             if ($pair <= 0) continue;
 
             // INCOME
-            $masterIncome = $pair * 750;
-
+            $masterIncome = $pair * $bvPrice; // <-- FLASHING THE BINARY COMMISSION
             $user->balance += $masterIncome;
             $user->save();
 
+            // CREATE TRANSACTION
             Transaction::create([
                 'user_id'  => $user->id,
                 'amount'   => $masterIncome,
                 'trx_type' => '+',
-                'remark'   => 'master_matching_income',
+                'remark'   => 'binary_commission',
                 'trx'      => getTrx(),
-                'details'  => "Master Matching Income ({$pair} pairs)"
+                'details'  => "Binary Commission Income ({$pair} pairs)"
             ]);
 
             // INSERT BINARY LOG
@@ -290,19 +270,26 @@ class CronController extends Controller
                 'date'       => $today,
                 'half'       => $half,
                 'pair'       => $pair,
-                'commission' => 0,
+                'commission' => $masterIncome,
                 'created_at' => now()
             ]);
 
             // BV DEDUCTION
             $paidBV = $pair * $gs->total_bv;
-
             $uex->bv_left  = max(0, $uex->bv_left - $paidBV);
             $uex->bv_right = max(0, $uex->bv_right - $paidBV);
             $uex->save();
 
             createBVLog($user->id, 1, $paidBV, 'Binary Paid');
             createBVLog($user->id, 2, $paidBV, 'Binary Paid');
+
+            // CLEAN DAILY SLOT COUNT FOR THIS HALF
+            DB::table('binary_logs')
+                ->where('user_id', $user->id)
+                ->where('date', $today)
+                ->where('half', $half)
+                ->where('pair', '>', 0)
+                ->update(['pair' => 0, 'commission' => 0]);
         }
     }
 }
