@@ -136,8 +136,8 @@ class CronController extends Controller
      */
     private function matchingBound($force = false)
     {
-        $gs   = gs();
-        $now  = Carbon::now();
+        $gs    = gs();
+        $now   = Carbon::now();
         $today = $now->toDateString();
         $currentTime = $now->format('H:i');
 
@@ -157,12 +157,6 @@ class CronController extends Controller
             ->where('bv_right', '>', 0)
             ->get();
 
-        foreach ($users as $uex) {
-            $user = User::find($uex->user_id);
-            if (!$user) continue;
-
-        }
-
         // PREVENT DUPLICATE RUN
         if (!$force) {
             $alreadyRun = DB::table('binary_logs')
@@ -180,7 +174,6 @@ class CronController extends Controller
         $general = DB::table('general_settings')->select('bv_price')->first();
         $bvPrice = $general->bv_price ?? 0;
 
-        // ORIGINAL MATCHING LOGIC
         foreach ($users as $uex) {
 
             $user = User::find($uex->user_id);
@@ -241,11 +234,13 @@ class CronController extends Controller
             if ($pair <= 0) continue;
 
             // INCOME
-            $masterIncome = $pair * $bvPrice; // <-- FLASHING THE BINARY COMMISSION
+            $masterIncome = $pair * $bvPrice;
+
+            // ADD BALANCE
             $user->balance += $masterIncome;
             $user->save();
 
-            // CREATE TRANSACTION
+            // CREATE TRANSACTION (permanent)
             Transaction::create([
                 'user_id'  => $user->id,
                 'amount'   => $masterIncome,
@@ -255,7 +250,7 @@ class CronController extends Controller
                 'details'  => "Binary Commission Income ({$pair} pairs)"
             ]);
 
-            // INSERT BINARY LOG
+            // INSERT BINARY LOG (temporary flash)
             DB::table('binary_logs')->insert([
                 'user_id'    => $user->id,
                 'date'       => $today,
@@ -273,14 +268,12 @@ class CronController extends Controller
 
             createBVLog($user->id, 1, $paidBV, 'Binary Paid');
             createBVLog($user->id, 2, $paidBV, 'Binary Paid');
-
-            // CLEAN DAILY SLOT COUNT FOR THIS HALF
-            DB::table('binary_logs')
-                ->where('user_id', $user->id)
-                ->where('date', $today)
-                ->where('half', $half)
-                ->where('pair', '>', 0)
-                ->update(['pair' => 0, 'commission' => 0]);
         }
+
+        // FLASH OUT: Remove commissions for this half after processing so view resets
+        DB::table('binary_logs')
+            ->where('date', $today)
+            ->where('half', $half)
+            ->update(['commission' => 0]);
     }
 }
