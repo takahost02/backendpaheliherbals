@@ -147,8 +147,8 @@ class CronController extends Controller
     |--------------------------------------------------------------------------
     */
         $binarySlots = [
-            'first'  => '15:00', // Day Slot
-            'second' => '03:00', // Night Slot
+            'first'  => '16:30', // Day Slot
+            'second' => '04:30', // Night Slot
         ];
 
         // ===============================
