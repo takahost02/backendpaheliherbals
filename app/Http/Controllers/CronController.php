@@ -143,8 +143,8 @@ class CronController extends Controller
 
         // BINARY MATCHING TIME SLOTS
         $binarySlots = [
-            'first'  => '05:25', // Day Slot
-            'second' => '17:25', // Night Slot
+            'first'  => '05:28', // Day Slot
+            'second' => '17:28', // Night Slot
         ];
 
         // DETERMINE CURRENT HALF
