@@ -136,51 +136,50 @@ class CronController extends Controller
      */
     private function matchingBound($force = false)
     {
-        $gs = gs();
-        $now = Carbon::now();
+        $gs   = gs();
+        $now  = Carbon::now();
         $today = $now->toDateString();
+        $currentTime = $now->format('H:i');
 
         /*
     |--------------------------------------------------------------------------
-    | CONFIGURABLE BINARY TIME SLOTS
+    | BINARY MATCHING TIME SLOTS
     |--------------------------------------------------------------------------
-    | Change these anytime:
-    | 'first'  => '12:00'   (12 PM)
-    | 'second' => '00:00'   (12 AM)
-    |
-    | Example Future:
-    | 'first'  => '13:00'
-    | 'second' => '03:00'
     */
         $binarySlots = [
-            'first'  => '14:35',
-            'second' => '14:35',
+            'first'  => '15:00', // Day Slot
+            'second' => '03:00', // Night Slot
         ];
 
-        // Determine active slot
-        $currentTime = $now->format('H:i');
+        // ===============================
+        // DETERMINE CURRENT HALF (CORRECT)
+        // ===============================
         $half = null;
 
-        foreach ($binarySlots as $slotName => $slotTime) {
-            if ($currentTime >= $slotTime) {
-                $half = $slotName;
-            }
+        if ($currentTime >= $binarySlots['first'] && $currentTime < $binarySlots['second']) {
+            $half = 'first';
+        } else {
+            $half = 'second';
         }
 
-        // fallback if nothing matched
-        if (!$half) {
-            $half = array_key_last($binarySlots);
-        }
-
+        // ===============================
+        // PREVENT DUPLICATE RUN
+        // ===============================
         if (!$force) {
+
             $alreadyRun = DB::table('binary_logs')
                 ->where('date', $today)
                 ->where('half', $half)
                 ->exists();
 
-            if ($alreadyRun) return;
+            if ($alreadyRun) {
+                return;
+            }
         }
 
+        // ===============================
+        // GET USERS WITH BV
+        // ===============================
         $users = UserExtra::where('bv_left', '>', 0)
             ->where('bv_right', '>', 0)
             ->get();
@@ -190,6 +189,9 @@ class CronController extends Controller
             $user = User::find($uex->user_id);
             if (!$user) continue;
 
+            // ===============================
+            // DAILY + HALF CAP
+            // ===============================
             $dailyPair = DB::table('binary_logs')
                 ->where('user_id', $user->id)
                 ->where('date', $today)
@@ -201,25 +203,32 @@ class CronController extends Controller
                 ->where('half', $half)
                 ->sum('pair');
 
-            $allowedPair = min(
-                $gs->binary_daily_cap - $dailyPair,
-                $gs->binary_half_cap - $halfPair
-            );
+            $remainingDaily = max(0, $gs->binary_daily_cap - $dailyPair);
+            $remainingHalf  = max(0, $gs->binary_half_cap - $halfPair);
+
+            $allowedPair = min($remainingDaily, $remainingHalf);
 
             if ($allowedPair <= 0) continue;
 
+            // ===============================
+            // BV CALCULATION
+            // ===============================
             $leftBV  = $uex->bv_left;
             $rightBV = $uex->bv_right;
-            $pair = 0;
+            $pair    = 0;
 
-            // FIRST MATCH
+            // ===============================
+            // FIRST MATCH (2:1 or 1:2)
+            // ===============================
             if ($user->first_binary_completed == 0) {
 
                 if ($leftBV >= (2 * $gs->total_bv) && $rightBV >= $gs->total_bv) {
+
                     $pair = 1;
                     $leftBV  -= (2 * $gs->total_bv);
                     $rightBV -= $gs->total_bv;
-                } elseif ($leftBV >= $gs->total_bv && $rightBV >= (2 * $gs->total_bv)) {
+                } elseif ($rightBV >= (2 * $gs->total_bv) && $leftBV >= $gs->total_bv) {
+
                     $pair = 1;
                     $leftBV  -= $gs->total_bv;
                     $rightBV -= (2 * $gs->total_bv);
@@ -231,49 +240,57 @@ class CronController extends Controller
                 }
             }
 
+            // ===============================
+            // NORMAL 1:1 MATCH
+            // ===============================
             $normalPair = min(
                 floor($leftBV / $gs->total_bv),
                 floor($rightBV / $gs->total_bv)
             );
 
             $pair += $normalPair;
+
+            // APPLY CAP
             $pair = min($pair, $allowedPair);
 
             if ($pair <= 0) continue;
 
-            // ========================
-            // PAYOUT (Binary Disabled)
-            // ========================
+            // ===============================
+            // INCOME
+            // ===============================
             $masterIncome = $pair * 750;
 
             $user->balance += $masterIncome;
             $user->save();
 
             Transaction::create([
-                'user_id' => $user->id,
-                'amount' => $masterIncome,
+                'user_id'  => $user->id,
+                'amount'   => $masterIncome,
                 'trx_type' => '+',
-                'remark' => 'master_matching_income',
-                'trx' => getTrx(),
-                'details' => "Master Matching Income ({$pair} pairs)"
+                'remark'   => 'master_matching_income',
+                'trx'      => getTrx(),
+                'details'  => "Master Matching Income ({$pair} pairs)"
             ]);
 
+            // ===============================
+            // INSERT BINARY LOG
+            // ===============================
             DB::table('binary_logs')->insert([
-                'user_id' => $user->id,
-                'date' => $today,
-                'half' => $half,
-                'pair' => $pair,
+                'user_id'    => $user->id,
+                'date'       => $today,
+                'half'       => $half,
+                'pair'       => $pair,
                 'commission' => 0,
                 'created_at' => now()
             ]);
 
-            // ========================
-            // BV DEDUCTION
-            // ========================
+            // ===============================
+            // BV DEDUCTION (CORRECT)
+            // ===============================
             $paidBV = $pair * $gs->total_bv;
 
-            $uex->bv_left  = max(0, $leftBV - $paidBV);
-            $uex->bv_right = max(0, $rightBV - $paidBV);
+            $uex->bv_left  = max(0, $uex->bv_left - $paidBV);
+            $uex->bv_right = max(0, $uex->bv_right - $paidBV);
             $uex->save();
 
             createBVLog($user->id, 1, $paidBV, 'Binary Paid');
