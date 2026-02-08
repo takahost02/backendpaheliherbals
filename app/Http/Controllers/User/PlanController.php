@@ -98,7 +98,15 @@ class PlanController extends Controller
         // Referral Commission (direct sponsor commission)
         $this->referralCommission($user->id, $plan->id, $details);
         // Matching Commission Distribution
-        $this->matchingCommission($user->id, $plan->bv, $details);
+        // Matching Commission
+
+        $matchingCommission = $this->matchingCommission($user->id, $plan->bv, $details);
+        if ($matchingCommission > 0) {
+            notify($user, 'MATCHING_COMMISSION', [
+                'amount' => showAmount($matchingCommission, false),
+                'post_balance' => showAmount($user->balance, false),
+            ]);
+        }
 
         $notify[] = ['success', 'Purchased ' . $plan->name . ' successfully'];
         return back()->withNotify($notify);
@@ -361,75 +369,62 @@ class PlanController extends Controller
         return view('Template::user.transactions', compact('pageTitle', 'logs', 'emptyMessage'));
     }
 
-    protected function matchingCommission($userId, $planBV, $details)
+    protected function matchingCommission(int $userId, float $planBV, string $details)
     {
-        $bvPrice = DB::table('general_settings')->value('bv_price') ?? 0;
-        if ($bvPrice <= 0) return;
+        $todayStart = now()->startOfDay();
+        $noonTime   = now()->setTime(12, 0);
+        $todayEnd   = now()->endOfDay();
 
-        // Get uplines in placement tree (exclude self)
-        $upline = $this->getPlacementUplineFor($userId, false);
+        // Positions: 1 = left, 2 = right
+        $leftBVMorning  = BvLog::where('user_id', $userId)->where('position', 1)->where('trx_type', '+')->whereBetween('created_at', [$todayStart, $noonTime])->sum('amount');
+        $rightBVMorning = BvLog::where('user_id', $userId)->where('position', 2)->where('trx_type', '+')->whereBetween('created_at', [$todayStart, $noonTime])->sum('amount');
 
-        foreach ($upline as $u) {
-            $userExtra = UserExtra::firstOrCreate(
-                ['user_id' => $u->id],
-                ['paid_left' => 0, 'paid_right' => 0, 'free_left' => 0, 'free_right' => 0]
-            );
+        $leftBVEvening  = BvLog::where('user_id', $userId)->where('position', 1)->where('trx_type', '+')->whereBetween('created_at', [$noonTime, $todayEnd])->sum('amount');
+        $rightBVEvening = BvLog::where('user_id', $userId)->where('position', 2)->where('trx_type', '+')->whereBetween('created_at', [$noonTime, $todayEnd])->sum('amount');
 
-            // Determine which side to increment
-            if ($userExtra->left_bv ?? 0 >= $userExtra->right_bv ?? 0) {
-                $userExtra->paid_right += $planBV;
-            } else {
-                $userExtra->paid_left += $planBV;
-            }
+        // First half (12 PM)
+        $firstHalfPair = min(2, min($leftBVMorning, $rightBVMorning));
 
-            // Calculate eligible pairs
-            $pairs = min($userExtra->paid_left, $userExtra->paid_right);
+        // Second half (12 AM)
+        $secondHalfPair = min(2, min($leftBVEvening, $rightBVEvening));
 
-            // Daily cap: 4 pairs (2 @ 12 PM + 2 @ 12 AM)
-            $dailyCap = 4;
-            $paidToday = $userExtra->paid_left + $userExtra->paid_right; // approximation
-            $eligiblePairs = min($pairs, $dailyCap - $paidToday);
-            if ($eligiblePairs <= 0) continue;
+        $pairMatch = $firstHalfPair + $secondHalfPair;
 
-            $commissionAmount = $eligiblePairs * $bvPrice;
+        $dailyCap = 4;
+        $effectivePairs = min($pairMatch, $dailyCap);
 
-            // Update UserExtra to subtract used BV
-            if ($userExtra->paid_left >= $userExtra->paid_right) {
-                $userExtra->paid_right -= $eligiblePairs;
-            } else {
-                $userExtra->paid_left -= $eligiblePairs;
-            }
+        $pairIncome = 750; // commission per pair
+        $matchingCommission = $effectivePairs * $pairIncome;
 
-            $userExtra->save();
+        if ($matchingCommission <= 0) return 0;
 
-            // Add to user's balance
-            $uplineUser = User::find($u->id);
-            if (!$uplineUser) continue;
+        // Add commission to user balance
+        $user = User::find($userId);
+        $user->balance += $matchingCommission;
+        $user->total_matching_com += $matchingCommission; // create column if needed
+        $user->save();
 
-            $uplineUser->balance += $commissionAmount;
-            $uplineUser->total_binary_com += $commissionAmount;
-            $uplineUser->save();
+        // Transaction
+        Transaction::create([
+            'user_id'      => $userId,
+            'amount'       => $matchingCommission,
+            'post_balance' => $user->balance,
+            'trx_type'     => '+',
+            'trx'          => getTrx(),
+            'remark'       => 'matching_commission',
+            'details'      => 'Matching commission earned. ' . $details,
+        ]);
 
-            // Create transaction
-            Transaction::create([
-                'user_id'      => $uplineUser->id,
-                'amount'       => $commissionAmount,
-                'post_balance' => $uplineUser->balance,
-                'trx_type'     => '+',
-                'trx'          => getTrx(),
-                'remark'       => 'matching_commission',
-                'details'      => 'Matching Commission from ' . auth()->user()->username . '. ' . $details,
-            ]);
+        // Commission log
+        CommissionLog::create([
+            'user_id'         => $userId,
+            'type'            => 'matching',
+            'amount'          => $matchingCommission,
+            'details'         => 'Matching commission earned. ' . $details,
+            'source_username' => $user->username,
+        ]);
 
-            // Log
-            CommissionLog::create([
-                'user_id'         => $uplineUser->id,
-                'type'            => 'matching',
-                'amount'          => $commissionAmount,
-                'details'         => 'Matching Commission from ' . auth()->user()->username . '. ' . $details,
-                'source_username' => auth()->user()->username,
-            ]);
-        }
+        return $matchingCommission;
     }
 
 
