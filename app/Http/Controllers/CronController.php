@@ -153,8 +153,8 @@ class CronController extends Controller
     | 'second' => '03:00'
     */
         $binarySlots = [
-            'first'  => '14:30',
-            'second' => '14:30',
+            'first'  => '14:35',
+            'second' => '14:35',
         ];
 
         // Determine active slot
