@@ -30,38 +30,38 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class UserController extends Controller
 {
-    
+
     public function kycSubmit(Request $request)
-{
-    $request->validate([
-        'aadhaar' => 'required|digits:12',
-        'pan' => 'required|regex:/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/',
-        'bank_name' => 'required',
-        'account_holder' => 'required',
-        'account_number' => 'required',
-        'ifsc' => 'required|regex:/^[A-Z]{4}0[A-Z0-9]{6}$/',
-        'id_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
-        'bank_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
-    ]);
+    {
+        $request->validate([
+            'aadhaar' => 'required|digits:12',
+            'pan' => 'required|regex:/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/',
+            'bank_name' => 'required',
+            'account_holder' => 'required',
+            'account_number' => 'required',
+            'ifsc' => 'required|regex:/^[A-Z]{4}0[A-Z0-9]{6}$/',
+            'id_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'bank_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
+        ]);
 
-    UserKyc::updateOrCreate(
-        ['user_id' => auth()->id()],
-        [
-            'aadhaar' => $request->aadhaar,
-            'pan' => strtoupper($request->pan),
-            'bank_name' => $request->bank_name,
-            'account_holder' => $request->account_holder,
-            'account_number' => $request->account_number,
-            'ifsc' => strtoupper($request->ifsc),
-            'id_proof' => $request->file('id_proof')->store('kyc/id'),
-            'bank_proof' => $request->file('bank_proof')->store('kyc/bank'),
-            'status' => 'pending'
-        ]
-    );
+        UserKyc::updateOrCreate(
+            ['user_id' => auth()->id()],
+            [
+                'aadhaar' => $request->aadhaar,
+                'pan' => strtoupper($request->pan),
+                'bank_name' => $request->bank_name,
+                'account_holder' => $request->account_holder,
+                'account_number' => $request->account_number,
+                'ifsc' => strtoupper($request->ifsc),
+                'id_proof' => $request->file('id_proof')->store('kyc/id'),
+                'bank_proof' => $request->file('bank_proof')->store('kyc/bank'),
+                'status' => 'pending'
+            ]
+        );
 
-    return back()->with('success', 'KYC submitted successfully. Waiting for admin approval.');
-}
-    
+        return back()->with('success', 'KYC submitted successfully. Waiting for admin approval.');
+    }
+
     /* =====================================================
        USER DATA
     ===================================================== */
@@ -106,52 +106,52 @@ class UserController extends Controller
             'deposits'
         ));
     }
-    
-    
+
+
     public function kycForm()
     {
-      $pageTitle = 'KYC Verification';
-    $kyc = UserKyc::where('user_id', auth()->id())->first();
+        $pageTitle = 'KYC Verification';
+        $kyc = UserKyc::where('user_id', auth()->id())->first();
 
-    // This helper gets the active template path safely
-    $activeTemplate = activeTemplate();
+        // This helper gets the active template path safely
+        $activeTemplate = activeTemplate();
 
-    return view($activeTemplate . 'user.kyc.form', compact('pageTitle', 'kyc'));
+        return view($activeTemplate . 'user.kyc.form', compact('pageTitle', 'kyc'));
     }
-    
-    public function binarySummeryHistory()
-        {
-            $pageTitle = 'Binary Summary History';
-        
-            $transactions = Transaction::where('user_id', auth()->id())
-                ->where('remark', 'master_matching_income') 
-                ->latest()
-                ->paginate(10);
-        
-            return view('Template::user.binary_history', compact(
-                'pageTitle',
-                'transactions'
-            ));
-        }
 
-        public function SummeryHistory()
-        {
-            $pageTitle = 'Income History';
-        
-            $transactions = Transaction::where('user_id', auth()->id())
-                ->where('trx_type', '+')
-                ->whereIn('remark', [
-                    'master_matching_income',
-                    'matrix_income'
-                ])
-                ->latest()
-                ->paginate(10);
-        
-            return view('Template::user.income_history', compact(
-                'pageTitle',
-                'transactions'
-            ));
-        }
+    public function binarySummeryHistory()
+    {
+        $pageTitle = 'Binary Summary History';
+
+        $transactions = Transaction::where('user_id', auth()->id())
+            ->where('remark', 'master_matching_income')
+            ->latest()
+            ->paginate(10);
+
+        return view('Template::user.binary_history', compact(
+            'pageTitle',
+            'transactions'
+        ));
+    }
+
+    public function SummeryHistory()
+    {
+        $pageTitle = 'Income History';
+
+        $transactions = Transaction::where('user_id', auth()->id())
+            ->where('trx_type', '+')
+            ->whereIn('remark', [
+                'master_matching_income',
+                'matrix_income'
+            ])
+            ->latest()
+            ->paginate(10);
+
+        return view('Template::user.income_history', compact(
+            'pageTitle',
+            'transactions'
+        ));
+    }
 
 
 
@@ -165,11 +165,14 @@ class UserController extends Controller
 
         $request->validate([
             'username' => [
-                'required', 'string', 'max:50',
+                'required',
+                'string',
+                'max:50',
                 Rule::unique('users', 'username')->ignore($user->id),
             ],
             'mobile' => [
-                'required', 'digits:10',
+                'required',
+                'digits:10',
                 Rule::unique('users', 'mobile')->ignore($user->id),
             ],
             'state'   => 'required|string|max:100',
@@ -316,12 +319,12 @@ class UserController extends Controller
             'carryForward'
         ));
     }
-    
+
     // public function binarySummery()
     // {
     //     $userId = auth()->id();
     //     $pageTitle = 'Master Matching Income';
-    
+
     //     // -----------------------------
     //     // TEAM LOGS
     //     // -----------------------------
@@ -331,14 +334,14 @@ class UserController extends Controller
     //         'free_left'  => User::where('ref_by', $userId)->where('position', 1)->where('plan_id', 0)->count(),
     //         'free_right' => User::where('ref_by', $userId)->where('position', 2)->where('plan_id', 0)->count(),
     //     ];
-    
+
     //     // -----------------------------
     //     // TIME WINDOWS
     //     // -----------------------------
     //     $todayStart = Carbon::today();
     //     $noonTime   = Carbon::today()->setTime(12, 0);
     //     $todayEnd   = Carbon::today()->endOfDay();
-    
+
     //     // -----------------------------
     //     // 1ST HALF PAIRS (LOG BASED)
     //     // -----------------------------
@@ -347,7 +350,7 @@ class UserController extends Controller
     //         ->where('date', $todayStart->toDateString())
     //         ->where('half', 'first')
     //         ->sum('pair');
-    
+
     //     // -----------------------------
     //     // 2ND HALF PAIRS (LOG BASED)
     //     // -----------------------------
@@ -356,30 +359,30 @@ class UserController extends Controller
     //         ->where('date', $todayStart->toDateString())
     //         ->where('half', 'second')
     //         ->sum('pair');
-    
+
     //     // -----------------------------
     //     // TOTAL PAIRS & CAPPING
     //     // -----------------------------
     //     $pairMatch = $firstHalfPair + $secondHalfPair;
     //     $dailyCap  = 4;
-    
+
     //     $effectivePairs = min($pairMatch, $dailyCap);
     //     $remainingCap   = max(0, $dailyCap - $effectivePairs);
-    
+
     //     // -----------------------------
     //     // INCOME
     //     // -----------------------------
     //     $pairIncome = 750;
     //     $binaryCommission = $effectivePairs * $pairIncome;
-    
+
     //     // -----------------------------
     //     // REAL BV (FROM USER EXTRA)
     //     // -----------------------------
     //     $uex = UserExtra::where('user_id', $userId)->first();
-    
+
     //     $bvLeft  = $uex->bv_left  ?? 0;
     //     $bvRight = $uex->bv_right ?? 0;
-    
+
     //     // -----------------------------
     //     // BV HISTORY (UNCHANGED)
     //     // -----------------------------
@@ -387,7 +390,7 @@ class UserController extends Controller
     //         ->latest()
     //         ->limit(20)
     //         ->get();
-    
+
     //     // -----------------------------
     //     // REAL CARRY FORWARD
     //     // -----------------------------
@@ -395,7 +398,7 @@ class UserController extends Controller
     //         'left'  => $bvLeft,
     //         'right' => $bvRight,
     //     ];
-    
+
     //     return view('Template::user.binarySummery', compact(
     //         'pageTitle',
     //         'logs',
@@ -469,7 +472,7 @@ class UserController extends Controller
                 'product_id' => $product->id,
                 'quantity'   => $request->quantity,
                 'price'      => $product->price,
-                'total_price'=> $totalPrice,
+                'total_price' => $totalPrice,
                 'trx'        => $trx,
                 'status'     => 0,
             ]);
@@ -543,66 +546,65 @@ class UserController extends Controller
         return Pdf::loadView('Template::user.welcome_letter_pdf', compact('user'))
             ->download('Welcome_Letter_' . $user->username . '.pdf');
     }
-                public function myIncome()
-            {
-                $pageTitle = 'My Income';
-                $userId = auth()->id();
-            
-                // -----------------------------
-                // BASE QUERY
-                // -----------------------------
-                $baseQuery = \DB::table('incomes')
-                    ->where('user_id', $userId);
-            
-                // -----------------------------
-                // TOTALS
-                // -----------------------------
-                $binaryIncome = (clone $baseQuery)->where('type', 'binary')->sum('amount');
-                $directIncome = (clone $baseQuery)->where('type', 'direct')->sum('amount');
-                $matchingBonus = (clone $baseQuery)->where('type', 'matching')->sum('amount');
-                $rewardIncome = (clone $baseQuery)->where('type', 'reward')->sum('amount');
-            
-                $totalEarned = $binaryIncome + $directIncome + $matchingBonus + $rewardIncome;
-            
-                // -----------------------------
-                // WITHDRAW / PENDING
-                // -----------------------------
-                $totalWithdrawn = \DB::table('withdrawals')
-                    ->where('user_id', $userId)
-                    ->where('status', 1)
-                    ->sum('amount');
-            
-                $pendingAmount = \DB::table('withdrawals')
-                    ->where('user_id', $userId)
-                    ->where('status', 2)
-                    ->sum('amount');
-            
-                // -----------------------------
-                // TRANSACTIONS LIST (FIXED!)
-                // -----------------------------
-                $transactions = \DB::table('incomes')
-                    ->where('user_id', $userId)
-                    ->orderBy('created_at', 'desc')
-                    ->limit(50)
-                    ->get();
-            
-                // -----------------------------
-                // TOTAL INCOME (DISPLAY CARD)
-                // -----------------------------
-                $totalIncome = $totalEarned;
-            
-                return view('Template::user.incomes.my_income', compact(
-                    'pageTitle',
-                    'binaryIncome',
-                    'directIncome',
-                    'matchingBonus',
-                    'rewardIncome',
-                    'totalEarned',
-                    'totalIncome',
-                    'totalWithdrawn',
-                    'pendingAmount',
-                    'transactions'
-                ));
-            }
+    public function myIncome()
+    {
+        $pageTitle = 'My Income';
+        $userId = auth()->id();
 
+        // -----------------------------
+        // BASE QUERY
+        // -----------------------------
+        $baseQuery = \DB::table('incomes')
+            ->where('user_id', $userId);
+
+        // -----------------------------
+        // TOTALS
+        // -----------------------------
+        $binaryIncome = (clone $baseQuery)->where('type', 'binary')->sum('amount');
+        $directIncome = (clone $baseQuery)->where('type', 'direct')->sum('amount');
+        $matchingBonus = (clone $baseQuery)->where('type', 'matching')->sum('amount');
+        $rewardIncome = (clone $baseQuery)->where('type', 'reward')->sum('amount');
+
+        $totalEarned = $binaryIncome + $directIncome + $matchingBonus + $rewardIncome;
+
+        // -----------------------------
+        // WITHDRAW / PENDING
+        // -----------------------------
+        $totalWithdrawn = \DB::table('withdrawals')
+            ->where('user_id', $userId)
+            ->where('status', 1)
+            ->sum('amount');
+
+        $pendingAmount = \DB::table('withdrawals')
+            ->where('user_id', $userId)
+            ->where('status', 2)
+            ->sum('amount');
+
+        // -----------------------------
+        // TRANSACTIONS LIST (FIXED!)
+        // -----------------------------
+        $transactions = \DB::table('incomes')
+            ->where('user_id', $userId)
+            ->orderBy('created_at', 'desc')
+            ->limit(50)
+            ->get();
+
+        // -----------------------------
+        // TOTAL INCOME (DISPLAY CARD)
+        // -----------------------------
+        $totalIncome = $totalEarned;
+
+        return view('Template::user.incomes.my_income', compact(
+            'pageTitle',
+            'binaryIncome',
+            'directIncome',
+            'matchingBonus',
+            'rewardIncome',
+            'totalEarned',
+            'totalIncome',
+            'totalWithdrawn',
+            'pendingAmount',
+            'transactions'
+        ));
+    }
 }
