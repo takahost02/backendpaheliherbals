@@ -368,6 +368,22 @@ class PlanController extends Controller
 
     protected function matchingCommissionForUplines(int $userId, float $planBV, string $details)
     {
+        // ✅ Check if user exists
+        $user = User::find($userId);
+        if (!$user) {
+            return;
+        }
+
+        // ✅ Check if user's plan exists and is ACTIVE
+        $plan = Plan::where('id', $user->plan_id)
+            ->where('status', 1)
+            ->first();
+
+        if (!$plan) {
+            // Plan not active → do not distribute commission
+            return;
+        }
+
         // Directly use the purchaser user only (no upline)
         $uplineUserId = $userId;
 
@@ -421,13 +437,8 @@ class PlanController extends Controller
         }
 
         // Update user balance
-        $user = User::find($uplineUserId);
-        if (!$user) {
-            return;
-        }
-
         $user->balance += $matchingCommission;
-        $user->total_matching_com += $matchingCommission; // optional column
+        $user->total_matching_com += $matchingCommission;
         $user->save();
 
         // Transaction log
@@ -450,6 +461,7 @@ class PlanController extends Controller
             'source_username' => $user->username,
         ]);
     }
+
     public function binarySummery()
     {
         $pageTitle = "Binary Summary";
