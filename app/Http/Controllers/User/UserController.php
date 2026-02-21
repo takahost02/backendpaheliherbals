@@ -7,9 +7,6 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use App\Models\UserKyc;
-
-
-/* MODELS */
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Deposit;
@@ -17,15 +14,9 @@ use App\Models\Product;
 use App\Models\Withdrawal;
 use App\Models\Transaction;
 use App\Models\BvLog;
-use App\Models\UserExtra;
-
-/* UTILS */
+use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
-
-/* CONSTANTS */
 use App\Constants\Status;
-
-/* PDF */
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class UserController extends Controller
@@ -44,8 +35,10 @@ class UserController extends Controller
             'bank_proof' => 'required|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
+        $user = Auth::user();
+
         UserKyc::updateOrCreate(
-            ['user_id' => auth()->id()],
+            ['user_id' => $user->id],
             [
                 'aadhaar' => $request->aadhaar,
                 'pan' => strtoupper($request->pan),
@@ -62,14 +55,10 @@ class UserController extends Controller
         return back()->with('success', 'KYC submitted successfully. Waiting for admin approval.');
     }
 
-    /* =====================================================
-       USER DATA
-    ===================================================== */
-
     public function userData()
     {
         $pageTitle = 'User Data';
-        $user = auth()->user();
+        $user = Auth::user();
 
         $lastUser = User::where('username', 'LIKE', 'PH707%')
             ->orderByDesc('id')
@@ -89,15 +78,11 @@ class UserController extends Controller
         ));
     }
 
-    /* =====================================================
-       DEPOSIT HISTORY
-    ===================================================== */
-
     public function depositHistory()
     {
         $pageTitle = 'Deposit History';
 
-        $deposits = Deposit::where('user_id', auth()->id())
+        $deposits = Deposit::where('user_id', Auth::id())
             ->latest()
             ->paginate(10);
 
@@ -107,13 +92,11 @@ class UserController extends Controller
         ));
     }
 
-
     public function kycForm()
     {
         $pageTitle = 'KYC Verification';
-        $kyc = UserKyc::where('user_id', auth()->id())->first();
+        $kyc = UserKyc::where('user_id', Auth::id())->first();
 
-        // This helper gets the active template path safely
         $activeTemplate = activeTemplate();
 
         return view($activeTemplate . 'user.kyc.form', compact('pageTitle', 'kyc'));
@@ -123,7 +106,7 @@ class UserController extends Controller
     {
         $pageTitle = 'Binary Summary History';
 
-        $transactions = Transaction::where('user_id', auth()->id())
+        $transactions = Transaction::where('user_id', Auth::id())
             ->where('remark', 'master_matching_income')
             ->latest()
             ->paginate(10);
@@ -138,7 +121,7 @@ class UserController extends Controller
     {
         $pageTitle = 'Income History';
 
-        $transactions = Transaction::where('user_id', auth()->id())
+        $transactions = Transaction::where('user_id', Auth::id())
             ->where('trx_type', '+')
             ->whereIn('remark', [
                 'master_matching_income',
@@ -153,15 +136,10 @@ class UserController extends Controller
         ));
     }
 
-
-
-    /* =====================================================
-       USER DATA SUBMIT
-    ===================================================== */
-
     public function userDataSubmit(Request $request)
     {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
         $request->validate([
             'username' => [
@@ -182,12 +160,12 @@ class UserController extends Controller
         ]);
 
         $user->update([
-            'username'          => $request->username,
-            'mobile'            => $request->mobile,
-            'state'             => $request->state,
-            'city'              => $request->city,
-            'address'           => $request->address,
-            'zip'               => $request->zip,
+            'username'         => $request->username,
+            'mobile'           => $request->mobile,
+            'state'            => $request->state,
+            'city'             => $request->city,
+            'address'          => $request->address,
+            'zip'              => $request->zip,
             'profile_complete' => Status::YES,
         ]);
 
@@ -196,14 +174,10 @@ class UserController extends Controller
             ->withNotify([['success', 'Profile updated successfully']]);
     }
 
-    /* =====================================================
-       DASHBOARD
-    ===================================================== */
-
     public function home()
     {
         $pageTitle = 'Dashboard';
-        $user = auth()->user();
+        $user = Auth::user();
 
         $totalDeposit     = Deposit::whereUserId($user->id)->whereStatus(1)->sum('amount');
         $totalWithdraw    = Withdrawal::whereUserId($user->id)->whereStatus(1)->sum('amount');
@@ -231,13 +205,9 @@ class UserController extends Controller
         ));
     }
 
-    /* =====================================================
-       BINARY SUMMARY
-    ===================================================== */
-
     public function binarySummery()
     {
-        $userId = auth()->id();
+        $userId = Auth::user();
         $pageTitle = 'Master Matching Income';
 
         $logs = (object) [
@@ -320,120 +290,17 @@ class UserController extends Controller
         ));
     }
 
-    // public function binarySummery()
-    // {
-    //     $userId = auth()->id();
-    //     $pageTitle = 'Master Matching Income';
-
-    //     // -----------------------------
-    //     // TEAM LOGS
-    //     // -----------------------------
-    //     $logs = (object) [
-    //         'paid_left'  => User::where('ref_by', $userId)->where('position', 1)->where('plan_id', '!=', 0)->count(),
-    //         'paid_right' => User::where('ref_by', $userId)->where('position', 2)->where('plan_id', '!=', 0)->count(),
-    //         'free_left'  => User::where('ref_by', $userId)->where('position', 1)->where('plan_id', 0)->count(),
-    //         'free_right' => User::where('ref_by', $userId)->where('position', 2)->where('plan_id', 0)->count(),
-    //     ];
-
-    //     // -----------------------------
-    //     // TIME WINDOWS
-    //     // -----------------------------
-    //     $todayStart = Carbon::today();
-    //     $noonTime   = Carbon::today()->setTime(12, 0);
-    //     $todayEnd   = Carbon::today()->endOfDay();
-
-    //     // -----------------------------
-    //     // 1ST HALF PAIRS (LOG BASED)
-    //     // -----------------------------
-    //     $firstHalfPair = DB::table('binary_logs')
-    //         ->where('user_id', $userId)
-    //         ->where('date', $todayStart->toDateString())
-    //         ->where('half', 'first')
-    //         ->sum('pair');
-
-    //     // -----------------------------
-    //     // 2ND HALF PAIRS (LOG BASED)
-    //     // -----------------------------
-    //     $secondHalfPair = DB::table('binary_logs')
-    //         ->where('user_id', $userId)
-    //         ->where('date', $todayStart->toDateString())
-    //         ->where('half', 'second')
-    //         ->sum('pair');
-
-    //     // -----------------------------
-    //     // TOTAL PAIRS & CAPPING
-    //     // -----------------------------
-    //     $pairMatch = $firstHalfPair + $secondHalfPair;
-    //     $dailyCap  = 4;
-
-    //     $effectivePairs = min($pairMatch, $dailyCap);
-    //     $remainingCap   = max(0, $dailyCap - $effectivePairs);
-
-    //     // -----------------------------
-    //     // INCOME
-    //     // -----------------------------
-    //     $pairIncome = 750;
-    //     $binaryCommission = $effectivePairs * $pairIncome;
-
-    //     // -----------------------------
-    //     // REAL BV (FROM USER EXTRA)
-    //     // -----------------------------
-    //     $uex = UserExtra::where('user_id', $userId)->first();
-
-    //     $bvLeft  = $uex->bv_left  ?? 0;
-    //     $bvRight = $uex->bv_right ?? 0;
-
-    //     // -----------------------------
-    //     // BV HISTORY (UNCHANGED)
-    //     // -----------------------------
-    //     $bvHistory = BvLog::where('user_id', $userId)
-    //         ->latest()
-    //         ->limit(20)
-    //         ->get();
-
-    //     // -----------------------------
-    //     // REAL CARRY FORWARD
-    //     // -----------------------------
-    //     $carryForward = [
-    //         'left'  => $bvLeft,
-    //         'right' => $bvRight,
-    //     ];
-
-    //     return view('Template::user.binarySummery', compact(
-    //         'pageTitle',
-    //         'logs',
-    //         'firstHalfPair',
-    //         'secondHalfPair',
-    //         'pairMatch',
-    //         'remainingCap',
-    //         'binaryCommission',
-    //         'bvHistory',
-    //         'bvLeft',
-    //         'bvRight',
-    //         'carryForward'
-    //     ));
-    // }
-
-
-    /* =====================================================
-       ORDERS
-    ===================================================== */
-
     public function orders()
     {
         $pageTitle = 'My Orders';
 
-        $orders = Order::whereUserId(auth()->id())
+        $orders = Order::whereUserId(Auth::id())
             ->with('product')
             ->latest()
             ->paginate(10);
 
         return view('Template::user.orders', compact('pageTitle', 'orders'));
     }
-
-    /* =====================================================
-       PURCHASE
-    ===================================================== */
 
     public function purchase(Request $request)
     {
@@ -442,8 +309,11 @@ class UserController extends Controller
             'quantity'   => 'required|integer|min:1',
         ]);
 
+        /** @var \App\Models\Product $product */
         $product = Product::active()->findOrFail($request->product_id);
-        $user = auth()->user();
+
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
         $totalPrice = $product->price * $request->quantity;
 
@@ -481,13 +351,9 @@ class UserController extends Controller
         return back()->withNotify([['success', 'Order placed successfully']]);
     }
 
-    /* =====================================================
-       EARNINGS FILTER (AJAX)
-    ===================================================== */
-
     public function filter(Request $request)
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
         $range = $request->get('range', 'current');
 
         $query = DB::table('incomes')->where('user_id', $userId);
@@ -511,14 +377,10 @@ class UserController extends Controller
         ]);
     }
 
-    /* =====================================================
-       EXPORT PDF
-    ===================================================== */
-
     public function exportPDF()
     {
         $transactions = DB::table('incomes')
-            ->where('user_id', auth()->id())
+            ->where('user_id', Auth::id())
             ->orderBy('created_at', 'desc')
             ->get();
 
@@ -527,21 +389,17 @@ class UserController extends Controller
         return $pdf->download('earnings-report.pdf');
     }
 
-    /* =====================================================
-       WELCOME LETTER
-    ===================================================== */
-
     public function welcomeLetter()
     {
         return view('Template::user.welcome_letter', [
             'pageTitle' => 'Welcome Letter',
-            'user' => auth()->user(),
+            'user' => Auth::user(),
         ]);
     }
 
     public function welcomeLetterPdf()
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         return Pdf::loadView('Template::user.welcome_letter_pdf', compact('user'))
             ->download('Welcome_Letter_' . $user->username . '.pdf');
@@ -549,49 +407,29 @@ class UserController extends Controller
     public function myIncome()
     {
         $pageTitle = 'My Income';
-        $userId = auth()->id();
-
-        // -----------------------------
-        // BASE QUERY
-        // -----------------------------
-        $baseQuery = \DB::table('incomes')
+        $userId = Auth::id();
+        $baseQuery = DB::table('incomes')
             ->where('user_id', $userId);
-
-        // -----------------------------
-        // TOTALS
-        // -----------------------------
         $binaryIncome = (clone $baseQuery)->where('type', 'binary')->sum('amount');
         $directIncome = (clone $baseQuery)->where('type', 'direct')->sum('amount');
         $matchingBonus = (clone $baseQuery)->where('type', 'matching')->sum('amount');
         $rewardIncome = (clone $baseQuery)->where('type', 'reward')->sum('amount');
 
         $totalEarned = $binaryIncome + $directIncome + $matchingBonus + $rewardIncome;
-
-        // -----------------------------
-        // WITHDRAW / PENDING
-        // -----------------------------
-        $totalWithdrawn = \DB::table('withdrawals')
+        $totalWithdrawn = DB::table('withdrawals')
             ->where('user_id', $userId)
             ->where('status', 1)
             ->sum('amount');
 
-        $pendingAmount = \DB::table('withdrawals')
+        $pendingAmount = DB::table('withdrawals')
             ->where('user_id', $userId)
             ->where('status', 2)
             ->sum('amount');
-
-        // -----------------------------
-        // TRANSACTIONS LIST (FIXED!)
-        // -----------------------------
-        $transactions = \DB::table('incomes')
+        $transactions = DB::table('incomes')
             ->where('user_id', $userId)
             ->orderBy('created_at', 'desc')
             ->limit(50)
             ->get();
-
-        // -----------------------------
-        // TOTAL INCOME (DISPLAY CARD)
-        // -----------------------------
         $totalIncome = $totalEarned;
 
         return view('Template::user.incomes.my_income', compact(
