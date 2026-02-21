@@ -53,8 +53,8 @@ class UserController extends Controller
                 'account_holder' => $request->account_holder,
                 'account_number' => $request->account_number,
                 'ifsc' => strtoupper($request->ifsc),
-                'id_proof' => $request->file('id_proof')->store('kyc/id'),
-                'bank_proof' => $request->file('bank_proof')->store('kyc/bank'),
+                'id_proof' => $request->file('id_proof')->store('kyc/id', 'public'),
+                'bank_proof' => $request->file('bank_proof')->store('kyc/bank', 'public'),
                 'status' => 'pending'
             ]
         );

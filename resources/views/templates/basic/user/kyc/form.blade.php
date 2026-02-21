@@ -146,7 +146,7 @@ $statusLabel = ucfirst(str_replace('_', ' ', $status));
         <div class="doc-card">
             <small class="text-muted">Uploaded ID Proof</small>
             <div class="mt-2">
-                <a href="{{ Storage::url($kyc->id_proof) }}" target="_blank"
+                <a href="{{ \Illuminate\Support\Facades\Storage::url($kyc->id_proof) }}" target="_blank"
                     class="btn btn-sm btn-outline-primary w-100">
                     View Document
                 </a>
@@ -160,7 +160,8 @@ $statusLabel = ucfirst(str_replace('_', ' ', $status));
         <div class="doc-card">
             <small class="text-muted">Uploaded Bank Proof</small>
             <div class="mt-2">
-                <a href="{{ Storage::url($kyc->id_proof) }}" target="_blank">
+                <a href="{{ \Illuminate\Support\Facades\Storage::url($kyc->bank_proof) }}" target="_blank"
+                    class="btn btn-sm btn-outline-primary w-100">
                     View Document
                 </a>
             </div>
