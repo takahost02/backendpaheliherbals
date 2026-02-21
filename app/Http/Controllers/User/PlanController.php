@@ -16,6 +16,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
 
+
 class PlanController extends Controller
 {
 
@@ -38,8 +39,8 @@ class PlanController extends Controller
             $notify[] = ['error', 'The plan is currently unavailable'];
             return back()->withNotify($notify);
         }
-
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
 
         if ($user->balance < $plan->price) {
             $notify[] = ['error', 'Insufficient Balance'];
@@ -244,7 +245,7 @@ class PlanController extends Controller
     public function myupline(Request $request)
     {
         $pageTitle = "My Upline";
-        $userId    = auth()->id();
+        $userId    = Auth::id();
 
         // Get all upline including self
         $rows = $this->getPlacementUplineFor($userId, true);
@@ -360,7 +361,7 @@ class PlanController extends Controller
     public function binaryCom()
     {
         $pageTitle    = "Binary Commission";
-        $logs         = Transaction::where('user_id', auth()->id())->where('remark', 'binary_commission')->orderBy('id', 'DESC')->paginate(getPaginate());
+        $logs         = Transaction::where('user_id', Auth::id())->where('remark', 'binary_commission')->orderBy('id', 'DESC')->paginate(getPaginate());
         $emptyMessage = 'No data found';
         return view('Template::user.transactions', compact('pageTitle', 'logs', 'emptyMessage'));
     }
@@ -469,11 +470,11 @@ class PlanController extends Controller
     {
         $pageTitle = "Royalty Summary";
 
-        $logs = UserExtra::where('user_id', auth()->id())->firstOrFail();
-        $log  = User::where('id', auth()->id())->firstOrFail();
+        $logs = UserExtra::where('user_id', Auth::id())->firstOrFail();
+        $log  = User::where('id', Auth::id())->firstOrFail();
 
         // Get bv_price & royalty percentage from general_settings
-        $general = \DB::table('general_settings')
+        $general = DB::table('general_settings')
             ->select('bv_price', 'royalty_bonus_percentage')
             ->first();
 
@@ -497,7 +498,7 @@ class PlanController extends Controller
     public function binaryIncome()
     {
         $pageTitle = "Binary Income";
-        $transactions = Transaction::where('user_id', auth()->id())
+        $transactions = Transaction::where('user_id', Auth::id())
             ->where('remark', 'binary_commission')
             ->latest()
             ->paginate(getPaginate());
@@ -508,7 +509,7 @@ class PlanController extends Controller
     public function repurchaseIncome()
     {
         $pageTitle = "Repurchase Income";
-        $transactions = Transaction::where('user_id', auth()->id())
+        $transactions = Transaction::where('user_id', Auth::id())
             ->where('remark', 'repurchase_level_commission')
             ->latest()
             ->paginate(getPaginate());
@@ -519,7 +520,7 @@ class PlanController extends Controller
     public function RefferalIncome()
     {
         $pageTitle = "Referral Income";
-        $transactions = Transaction::where('user_id', auth()->id())
+        $transactions = Transaction::where('user_id', Auth::id())
             ->where('remark', 'referral_commission')
             ->latest()
             ->paginate(getPaginate());
@@ -535,8 +536,8 @@ class PlanController extends Controller
     public function SponsorIncome()
     {
         $pageTitle = "Sponsor Royalty Income";
-        $logs      = UserExtra::where('user_id', auth()->id())->firstOrFail();
-        $log      = User::where('id', auth()->id())->firstOrFail();
+        $logs      = UserExtra::where('user_id', Auth::id())->firstOrFail();
+        $log      = User::where('id', auth::id())->firstOrFail();
         return view('Template::user.sponsorIncome', compact('pageTitle', 'logs', 'log'));
     }
 
@@ -545,7 +546,7 @@ class PlanController extends Controller
         $pageTitle = "Level Income";
 
         // Get all level commissions for the authenticated user
-        $commissions = CommissionLog::where('user_id', auth()->id())
+        $commissions = CommissionLog::where('user_id', Auth::id())
             ->where('type', 'level')
             ->latest()
             ->paginate(getPaginate());
@@ -574,7 +575,7 @@ class PlanController extends Controller
             $logs      = $this->bvData();
         }
 
-        $logs = $logs->where('user_id', auth()->id())->latest('id')->paginate(getPaginate());
+        $logs = $logs->where('user_id', Auth::id())->latest('id')->paginate(getPaginate());
 
         return view('Template::user.bvLog', compact('pageTitle', 'logs'));
     }
@@ -592,13 +593,13 @@ class PlanController extends Controller
     public function myRefLog()
     {
         $pageTitle = "My Referral";
-        $logs      = User::where('ref_by', auth()->id())->latest()->paginate(getPaginate());
+        $logs      = User::where('ref_by', Auth::id())->latest()->paginate(getPaginate());
         return view('Template::user.myRef', compact('pageTitle', 'logs'));
     }
 
     public function myTree()
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $tree = showTreePage($user->id, $user->fullname);
         $pageTitle = "My Tree";
 
@@ -628,7 +629,7 @@ class PlanController extends Controller
     public function myTeam(Request $request)
     {
         $pageTitle = "My Team";
-        $userId    = auth()->id();
+        $userId    = Auth::id();
 
         // Get all downline including self
         $rows = $this->getPlacementDownlineFor($userId, true);
