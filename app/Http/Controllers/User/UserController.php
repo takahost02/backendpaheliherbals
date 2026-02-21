@@ -107,7 +107,7 @@ class UserController extends Controller
         $pageTitle = 'Binary Summary History';
 
         $transactions = Transaction::where('user_id', Auth::id())
-            ->where('remark', 'master_matching_income')
+            ->where('remark', 'matching_commission')
             ->latest()
             ->paginate(10);
 
