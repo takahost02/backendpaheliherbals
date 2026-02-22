@@ -109,11 +109,15 @@ class UserController extends Controller
 
     public function indexTransfer()
     {
-        $pageTitle = 'Deposit History';
+        $pageTitle = 'Balance Transfer';
 
         return view('Template::user.balanceTransfer', compact('pageTitle'));
     }
 
+    public function balanceTransfer()
+    {
+
+    }
 
     public function kycForm()
     {
