@@ -140,6 +140,7 @@ class UserController extends Controller
 
         $transactions = Transaction::where('user_id', auth()->id())
             ->where('trx_type', '+')
+            ->where('remark', '!=', 'deposit')
             ->latest()
             ->paginate(10);
 
