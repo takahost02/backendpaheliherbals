@@ -367,13 +367,11 @@ class PlanController extends Controller
 
     protected function matchingCommissionForUplines(int $userId, float $planBV, string $details)
     {
-        // Get purchaser
         $purchaser = User::find($userId);
         if (!$purchaser || !$purchaser->ref_by) {
-            return; // No referral user
+            return;
         }
 
-        // ✅ Commission goes ONLY to direct referral user
         $referralUser = User::find($purchaser->ref_by);
         if (!$referralUser) {
             return;
@@ -381,58 +379,49 @@ class PlanController extends Controller
 
         $uplineUserId = $referralUser->id;
 
-        // 12 PM / 12 AM split
         $todayStart = now()->startOfDay();
-        $noonTime   = now()->setTime(12, 0);
         $todayEnd   = now()->endOfDay();
 
-        // BV sums for left/right of referral user
-        $leftBVMorning  = BvLog::where('user_id', $uplineUserId)
+        // ✅ Total BV Today (no 12PM split needed anymore)
+        $leftBV = BvLog::where('user_id', $uplineUserId)
             ->where('position', 1)
             ->where('trx_type', '+')
-            ->whereBetween('created_at', [$todayStart, $noonTime])
+            ->whereBetween('created_at', [$todayStart, $todayEnd])
             ->sum('amount');
 
-        $rightBVMorning = BvLog::where('user_id', $uplineUserId)
+        $rightBV = BvLog::where('user_id', $uplineUserId)
             ->where('position', 2)
             ->where('trx_type', '+')
-            ->whereBetween('created_at', [$todayStart, $noonTime])
+            ->whereBetween('created_at', [$todayStart, $todayEnd])
             ->sum('amount');
 
-        $leftBVEvening  = BvLog::where('user_id', $uplineUserId)
-            ->where('position', 1)
-            ->where('trx_type', '+')
-            ->whereBetween('created_at', [$noonTime, $todayEnd])
-            ->sum('amount');
-
-        $rightBVEvening = BvLog::where('user_id', $uplineUserId)
-            ->where('position', 2)
-            ->where('trx_type', '+')
-            ->whereBetween('created_at', [$noonTime, $todayEnd])
-            ->sum('amount');
-
-        // Pair logic (UNCHANGED)
-        $firstHalfPair  = min(2, min($leftBVMorning, $rightBVMorning));
-        $secondHalfPair = min(2, min($leftBVEvening, $rightBVEvening));
-
-        $pairMatch = $firstHalfPair + $secondHalfPair;
+        // Each 1 BV = 1 pair unit (same as your previous logic)
+        $totalPairsPossible = min($leftBV, $rightBV);
 
         $dailyCap = 4;
-        $effectivePairs = min($pairMatch, $dailyCap);
+        $totalPairsPossible = min($totalPairsPossible, $dailyCap);
 
-        $pairIncome = 750;
-        $matchingCommission = $effectivePairs * $pairIncome;
+        // ✅ Count how many pairs already paid today
+        $alreadyPaidPairs = CommissionLog::where('user_id', $uplineUserId)
+            ->where('type', 'matching')
+            ->whereBetween('created_at', [$todayStart, $todayEnd])
+            ->count();
 
-        if ($matchingCommission <= 0) {
-            return;
+        // ✅ Only pay for NEW pairs
+        $newPairs = $totalPairsPossible - $alreadyPaidPairs;
+
+        if ($newPairs <= 0) {
+            return; // No new pair formed
         }
 
-        // ✅ Give commission ONLY to referral user
+        $pairIncome = 750;
+        $matchingCommission = $newPairs * $pairIncome;
+
+        // Give commission
         $referralUser->balance += $matchingCommission;
         $referralUser->total_matching_com += $matchingCommission;
         $referralUser->save();
 
-        // Transaction log
         Transaction::create([
             'user_id'      => $referralUser->id,
             'amount'       => $matchingCommission,
@@ -443,7 +432,6 @@ class PlanController extends Controller
             'details'      => 'Matching commission from downline ' . $purchaser->username . '. ' . $details,
         ]);
 
-        // Commission log
         CommissionLog::create([
             'user_id'         => $referralUser->id,
             'type'            => 'matching',
@@ -452,7 +440,7 @@ class PlanController extends Controller
             'source_username' => $purchaser->username,
         ]);
     }
-    
+
     public function binarySummery()
     {
         $pageTitle = "Binary Summary";
