@@ -57,8 +57,7 @@
                 <thead>
                     <tr>
                         <th>TRX ID</th>
-                        <th>Session</th>
-                        <th>Pairs</th>
+                        <th>Details</th>
                         <th>Date</th>
                         <th>Amount</th>
                         <th>Post Balance</th>
@@ -68,18 +67,6 @@
                 <tbody>
                     @forelse($transactions as $trx)
 
-                        @php
-                            $details = $trx->details ?? '';
-
-                            // Extract Session (AM/PM)
-                            preg_match('/\((.*?)\)/', $details, $sessionMatch);
-                            $session = $sessionMatch[1] ?? '-';
-
-                            // Extract Pair Count
-                            preg_match('/(\d+)\s*Pair/', $details, $pairMatch);
-                            $pairs = $pairMatch[1] ?? 0;
-                        @endphp
-
                         <tr>
                             {{-- TRX --}}
                             <td>
@@ -88,18 +75,9 @@
                                 </strong>
                             </td>
 
-                            {{-- Session --}}
-                            <td>
-                                <span class="badge bg-info">
-                                    {{ $session }}
-                                </span>
-                            </td>
-
-                            {{-- Pair Count --}}
-                            <td>
-                                <span class="fw-bold">
-                                    {{ $pairs }}
-                                </span>
+                            {{-- Details (Full DB Details) --}}
+                            <td style="max-width:300px;">
+                                {{ $trx->details }}
                             </td>
 
                             {{-- Date --}}
@@ -113,8 +91,8 @@
 
                             {{-- Amount --}}
                             <td>
-                                <span class="text-success fw-bold">
-                                    + {{ showAmount($trx->amount) }}
+                                <span class="{{ $trx->trx_type == '+' ? 'text-success' : 'text-danger' }} fw-bold">
+                                    {{ $trx->trx_type }} {{ showAmount($trx->amount) }}
                                 </span>
                             </td>
 
@@ -126,7 +104,7 @@
 
                     @empty
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
+                            <td colspan="5" class="text-center py-4 text-muted">
                                 No Master Matching Income Found
                             </td>
                         </tr>
