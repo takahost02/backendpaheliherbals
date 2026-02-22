@@ -41,7 +41,7 @@ class KycController extends Controller
     {
         $pageTitle = 'KYC Details';
 
-        $kyc = \App\Models\UserKyc::with('user')->findOrFail($id);
+        $kyc = UserKyc::with('user')->findOrFail($id);
 
         return view('admin.kyc.show', compact('pageTitle', 'kyc'));
     }
