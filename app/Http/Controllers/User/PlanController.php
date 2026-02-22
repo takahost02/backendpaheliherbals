@@ -367,71 +367,85 @@ class PlanController extends Controller
 
     protected function matchingCommissionForUplines(int $userId, float $planBV, string $details)
     {
-        $upline = $this->getPlacementUplineFor($userId, true);
+        // Only purchaser will get matching commission
+        $uplineUserId = $userId;
 
-        // Remove the purchaser themselves
-        $upline = collect($upline)->reject(fn($u) => (int)$u->id === $userId);
+        // 12 PM / 12 AM split
+        $todayStart = now()->startOfDay();
+        $noonTime   = now()->setTime(12, 0);
+        $todayEnd   = now()->endOfDay();
 
-        foreach ($upline as $item) {
-            $uplineUserId = $item->id;
+        // BV sums for left/right
+        $leftBVMorning  = BvLog::where('user_id', $uplineUserId)
+            ->where('position', 1)
+            ->where('trx_type', '+')
+            ->whereBetween('created_at', [$todayStart, $noonTime])
+            ->sum('amount');
 
-            // 12 PM / 12 AM split
-            $todayStart = now()->startOfDay();
-            $noonTime   = now()->setTime(12, 0);
-            $todayEnd   = now()->endOfDay();
+        $rightBVMorning = BvLog::where('user_id', $uplineUserId)
+            ->where('position', 2)
+            ->where('trx_type', '+')
+            ->whereBetween('created_at', [$todayStart, $noonTime])
+            ->sum('amount');
 
-            // BV sums for left/right
-            $leftBVMorning  = BvLog::where('user_id', $uplineUserId)->where('position', 1)->where('trx_type', '+')->whereBetween('created_at', [$todayStart, $noonTime])->sum('amount');
-            $rightBVMorning = BvLog::where('user_id', $uplineUserId)->where('position', 2)->where('trx_type', '+')->whereBetween('created_at', [$todayStart, $noonTime])->sum('amount');
+        $leftBVEvening  = BvLog::where('user_id', $uplineUserId)
+            ->where('position', 1)
+            ->where('trx_type', '+')
+            ->whereBetween('created_at', [$noonTime, $todayEnd])
+            ->sum('amount');
 
-            $leftBVEvening  = BvLog::where('user_id', $uplineUserId)->where('position', 1)->where('trx_type', '+')->whereBetween('created_at', [$noonTime, $todayEnd])->sum('amount');
-            $rightBVEvening = BvLog::where('user_id', $uplineUserId)->where('position', 2)->where('trx_type', '+')->whereBetween('created_at', [$noonTime, $todayEnd])->sum('amount');
+        $rightBVEvening = BvLog::where('user_id', $uplineUserId)
+            ->where('position', 2)
+            ->where('trx_type', '+')
+            ->whereBetween('created_at', [$noonTime, $todayEnd])
+            ->sum('amount');
 
-            // First half (12 PM)
-            $firstHalfPair = min(2, min($leftBVMorning, $rightBVMorning));
+        // First half (12 PM)
+        $firstHalfPair = min(2, min($leftBVMorning, $rightBVMorning));
 
-            // Second half (12 AM)
-            $secondHalfPair = min(2, min($leftBVEvening, $rightBVEvening));
+        // Second half (12 AM)
+        $secondHalfPair = min(2, min($leftBVEvening, $rightBVEvening));
 
-            $pairMatch = $firstHalfPair + $secondHalfPair;
-            $dailyCap = 4;
-            $effectivePairs = min($pairMatch, $dailyCap);
+        $pairMatch = $firstHalfPair + $secondHalfPair;
 
-            $pairIncome = 750;
-            $matchingCommission = $effectivePairs * $pairIncome;
+        $dailyCap = 4;
+        $effectivePairs = min($pairMatch, $dailyCap);
 
-            if ($matchingCommission <= 0) continue;
+        $pairIncome = 750;
+        $matchingCommission = $effectivePairs * $pairIncome;
 
-            // Update user balance
-            $uplineUser = User::find($uplineUserId);
-            if (!$uplineUser) continue;
-
-            $uplineUser->balance += $matchingCommission;
-            $uplineUser->total_matching_com += $matchingCommission; // optional column
-            $uplineUser->save();
-
-            // Transaction log
-            Transaction::create([
-                'user_id'      => $uplineUserId,
-                'amount'       => $matchingCommission,
-                'post_balance' => $uplineUser->balance,
-                'trx_type'     => '+',
-                'trx'          => getTrx(),
-                'remark'       => 'matching_commission',
-                'details'      => 'Matching commission from downline ' . $userId . '. ' . $details,
-            ]);
-
-            // Commission log
-            CommissionLog::create([
-                'user_id'         => $uplineUserId,
-                'type'            => 'matching',
-                'amount'          => $matchingCommission,
-                'details'         => 'Matching commission from downline ' . $userId . '. ' . $details,
-                'source_username' => $uplineUser->username,
-            ]);
+        if ($matchingCommission <= 0) {
+            return;
         }
-    }
 
+        // Update purchaser balance only
+        $user = User::find($userId);
+        if (!$user) return;
+
+        $user->balance += $matchingCommission;
+        $user->total_matching_com += $matchingCommission; // optional column
+        $user->save();
+
+        // Transaction log
+        Transaction::create([
+            'user_id'      => $userId,
+            'amount'       => $matchingCommission,
+            'post_balance' => $user->balance,
+            'trx_type'     => '+',
+            'trx'          => getTrx(),
+            'remark'       => 'matching_commission',
+            'details'      => 'Matching commission. ' . $details,
+        ]);
+
+        // Commission log
+        CommissionLog::create([
+            'user_id'         => $userId,
+            'type'            => 'matching',
+            'amount'          => $matchingCommission,
+            'details'         => 'Matching commission. ' . $details,
+            'source_username' => $user->username,
+        ]);
+    }
 
     public function binarySummery()
     {
