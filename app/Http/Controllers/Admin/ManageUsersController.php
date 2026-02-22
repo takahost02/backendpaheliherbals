@@ -218,11 +218,12 @@ class ManageUsersController extends Controller
 
     public function kycApprove($id)
     {
-        $user     = User::findOrFail($id);
-        $user->kv = Status::KYC_VERIFIED;
-        $user->save();
+        $kyc = UserKyc::where('id', $id)->firstOrFail();
 
-        notify($user, 'KYC_APPROVE', []);
+        if ($kyc->status !== 'approved') {
+            $kyc->status = 'approved';
+            $kyc->save();
+        }
 
         $notify[] = ['success', 'KYC approved successfully'];
         return to_route('admin.users.kyc.pending')->withNotify($notify);
