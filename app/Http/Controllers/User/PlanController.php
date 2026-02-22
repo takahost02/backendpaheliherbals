@@ -431,13 +431,55 @@ class PlanController extends Controller
             return; // No new pair formed
         }
 
+        // ===============================
+        // MATCHING COMMISSION SECTION
+        // ===============================
+
+        // Pair income (DO NOT MODIFY AS REQUESTED)
         $pairIncome = 750;
         $matchingCommission = $newPairs * $pairIncome;
 
-        // Pay only new commission
+        // If no new pairs, stop here
+        if ($newPairs <= 0) {
+            return;
+        }
+
+        // Generate detailed pair information text
+        $pairDetailsText = '';
+
+        for ($i = 1; $i <= $newPairs; $i++) {
+
+            $currentPairNumber = $alreadyPaidPairs + $i;
+
+            // Determine session
+            if ($currentPairNumber <= $firstHalfPair) {
+                $session = 'Morning Session (12AM - 12PM)';
+                $sessionPairNumber = $currentPairNumber;
+            } else {
+                $session = 'Evening Session (12PM - 12AM)';
+                $sessionPairNumber = $currentPairNumber - $firstHalfPair;
+            }
+
+            $pairDetailsText .= "Pair #{$currentPairNumber} "
+                . "({$session}, Session Pair #{$sessionPairNumber}); ";
+        }
+
+        // ===============================
+        // UPDATE USER WALLET
+        // ===============================
+
         $referralUser->balance += $matchingCommission;
         $referralUser->total_matching_com += $matchingCommission;
         $referralUser->save();
+
+        // ===============================
+        // CREATE TRANSACTION
+        // ===============================
+
+        $transactionDetails = 'Matching commission from downline '
+            . $purchaser->username . '. '
+            . $pairDetailsText
+            . $details;
 
         Transaction::create([
             'user_id'      => $referralUser->id,
@@ -446,14 +488,18 @@ class PlanController extends Controller
             'trx_type'     => '+',
             'trx'          => getTrx(),
             'remark'       => 'matching_commission',
-            'details'      => 'Matching commission from downline ' . $purchaser->username . '. ' . $details,
+            'details'      => $transactionDetails,
         ]);
+
+        // ===============================
+        // CREATE COMMISSION LOG
+        // ===============================
 
         CommissionLog::create([
             'user_id'         => $referralUser->id,
             'type'            => 'matching',
             'amount'          => $matchingCommission,
-            'details'         => 'Matching commission from downline ' . $purchaser->username . '. ' . $details,
+            'details'         => $transactionDetails,
             'source_username' => $purchaser->username,
         ]);
     }
