@@ -49,7 +49,11 @@ class KycController extends Controller
     // Approve
     public function approve($id)
     {
-        UserKyc::where('id', $id)->update(['status' => 'approved']);
+        $kyc = UserKyc::findOrFail($id);
+
+        if ($kyc->status !== 'approved') {
+            $kyc->update(['status' => 'approved']);
+        }
 
         return redirect()->route('admin.kyc.pending')
             ->with('success', 'KYC Approved Successfully');
