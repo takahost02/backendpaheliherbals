@@ -96,7 +96,7 @@
 
                     <button class="btn btn-outline-success confirmationBtn"
                         data-question="Are you sure to approve this documents?"
-                        data-action="{{ route('admin.users.kyc.approve', $user->user_id) }}">
+                        data-action="{{ route('admin.users.kyc.approve', $user->id) }}">
                         Approve
                     </button>
                 </div>
@@ -120,7 +120,7 @@
                 </button>
             </div>
 
-            <form action="{{ route('admin.users.kyc.reject', $user->user_id) }}" method="POST">
+            <form action="{{ route('admin.users.kyc.reject', $user->id) }}" method="POST">
                 @csrf
                 <div class="modal-body">
 
