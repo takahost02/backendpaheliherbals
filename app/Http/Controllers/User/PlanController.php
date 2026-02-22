@@ -367,15 +367,26 @@ class PlanController extends Controller
 
     protected function matchingCommissionForUplines(int $userId, float $planBV, string $details)
     {
-        // Only purchaser will get matching commission
-        $uplineUserId = $userId;
+        // Get purchaser
+        $purchaser = User::find($userId);
+        if (!$purchaser || !$purchaser->ref_by) {
+            return; // No referral user
+        }
+
+        // ✅ Commission goes ONLY to direct referral user
+        $referralUser = User::find($purchaser->ref_by);
+        if (!$referralUser) {
+            return;
+        }
+
+        $uplineUserId = $referralUser->id;
 
         // 12 PM / 12 AM split
         $todayStart = now()->startOfDay();
         $noonTime   = now()->setTime(12, 0);
         $todayEnd   = now()->endOfDay();
 
-        // BV sums for left/right
+        // BV sums for left/right of referral user
         $leftBVMorning  = BvLog::where('user_id', $uplineUserId)
             ->where('position', 1)
             ->where('trx_type', '+')
@@ -400,10 +411,8 @@ class PlanController extends Controller
             ->whereBetween('created_at', [$noonTime, $todayEnd])
             ->sum('amount');
 
-        // First half (12 PM)
-        $firstHalfPair = min(2, min($leftBVMorning, $rightBVMorning));
-
-        // Second half (12 AM)
+        // Pair logic (UNCHANGED)
+        $firstHalfPair  = min(2, min($leftBVMorning, $rightBVMorning));
         $secondHalfPair = min(2, min($leftBVEvening, $rightBVEvening));
 
         $pairMatch = $firstHalfPair + $secondHalfPair;
@@ -418,35 +427,32 @@ class PlanController extends Controller
             return;
         }
 
-        // Update purchaser balance only
-        $user = User::find($userId);
-        if (!$user) return;
-
-        $user->balance += $matchingCommission;
-        $user->total_matching_com += $matchingCommission; // optional column
-        $user->save();
+        // ✅ Give commission ONLY to referral user
+        $referralUser->balance += $matchingCommission;
+        $referralUser->total_matching_com += $matchingCommission;
+        $referralUser->save();
 
         // Transaction log
         Transaction::create([
-            'user_id'      => $userId,
+            'user_id'      => $referralUser->id,
             'amount'       => $matchingCommission,
-            'post_balance' => $user->balance,
+            'post_balance' => $referralUser->balance,
             'trx_type'     => '+',
             'trx'          => getTrx(),
             'remark'       => 'matching_commission',
-            'details'      => 'Matching commission. ' . $details,
+            'details'      => 'Matching commission from downline ' . $purchaser->username . '. ' . $details,
         ]);
 
         // Commission log
         CommissionLog::create([
-            'user_id'         => $userId,
+            'user_id'         => $referralUser->id,
             'type'            => 'matching',
             'amount'          => $matchingCommission,
-            'details'         => 'Matching commission. ' . $details,
-            'source_username' => $user->username,
+            'details'         => 'Matching commission from downline ' . $purchaser->username . '. ' . $details,
+            'source_username' => $purchaser->username,
         ]);
     }
-
+    
     public function binarySummery()
     {
         $pageTitle = "Binary Summary";
