@@ -15,6 +15,7 @@ use App\Rules\FileTypeValidate;
 use App\Http\Controllers\Controller;
 use App\Models\NotificationTemplate;
 use Illuminate\Support\Facades\Auth;
+use App\Models\UserKyc;
 
 class ManageUsersController extends Controller
 {
@@ -209,7 +210,7 @@ class ManageUsersController extends Controller
     public function kycDetails($id)
     {
         $pageTitle = 'KYC Details';
-        $user      = User::findOrFail($id);
+        $user      = UserKyc::findOrFail($id);
         return view('admin.users.kyc_detail', compact('pageTitle', 'user'));
     }
 
