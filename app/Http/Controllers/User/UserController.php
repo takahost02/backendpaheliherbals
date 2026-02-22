@@ -114,9 +114,76 @@ class UserController extends Controller
         return view('Template::user.balanceTransfer', compact('pageTitle'));
     }
 
-    public function balanceTransfer()
+    public function balanceTransfer(Request $request)
     {
+        $request->validate([
+            'username' => 'required',
+            'amount'   => 'required|numeric|min:1',
+        ]);
 
+        $sender = auth()->user();
+
+        // Find receiver by username or email
+        $receiver = User::where('username', $request->username)
+            ->orWhere('email', $request->username)
+            ->first();
+
+        if (!$receiver) {
+            $notify[] = ['error', 'User not found'];
+            return back()->withNotify($notify);
+        }
+
+        if ($receiver->id == $sender->id) {
+            $notify[] = ['error', 'You cannot transfer balance to yourself'];
+            return back()->withNotify($notify);
+        }
+
+        $amount = $request->amount;
+
+        // Charges
+        $fixedCharge = gs('bal_trans_fixed_charge');
+        $percentCharge = gs('bal_trans_per_charge');
+        $percent = ($amount * $percentCharge) / 100;
+        $totalCharge = $fixedCharge + $percent;
+        $totalDeduction = $amount + $totalCharge;
+
+        if ($sender->balance < $totalDeduction) {
+            $notify[] = ['error', 'Insufficient balance including charge'];
+            return back()->withNotify($notify);
+        }
+
+        // Deduct from sender
+        $sender->balance -= $totalDeduction;
+        $sender->save();
+
+        // Add to receiver
+        $receiver->balance += $amount;
+        $receiver->save();
+
+        // Transaction for sender
+        Transaction::create([
+            'user_id'      => $sender->id,
+            'amount'       => $amount,
+            'trx_type'     => '-',
+            'trx'          => getTrx(),
+            'details'      => 'Balance transferred to ' . $receiver->username,
+            'remark'       => 'balance_transfer',
+            'post_balance' => $sender->balance,
+        ]);
+
+        // Transaction for receiver
+        Transaction::create([
+            'user_id'      => $receiver->id,
+            'amount'       => $amount,
+            'trx_type'     => '+',
+            'trx'          => getTrx(),
+            'details'      => 'Balance received from ' . $sender->username,
+            'remark'       => 'balance_received',
+            'post_balance' => $receiver->balance,
+        ]);
+
+        $notify[] = ['success', 'Balance transferred successfully'];
+        return back()->withNotify($notify);
     }
 
     public function kycForm()
