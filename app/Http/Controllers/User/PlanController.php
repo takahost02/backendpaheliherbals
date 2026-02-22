@@ -16,7 +16,6 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-
 class PlanController extends Controller
 {
 
@@ -39,8 +38,8 @@ class PlanController extends Controller
             $notify[] = ['error', 'The plan is currently unavailable'];
             return back()->withNotify($notify);
         }
-        /** @var \App\Models\User $user */
-        $user = Auth::user();
+
+        $user = auth()->user();
 
         if ($user->balance < $plan->price) {
             $notify[] = ['error', 'Insufficient Balance'];
@@ -245,7 +244,7 @@ class PlanController extends Controller
     public function myupline(Request $request)
     {
         $pageTitle = "My Upline";
-        $userId    = Auth::id();
+        $userId    = auth()->id();
 
         // Get all upline including self
         $rows = $this->getPlacementUplineFor($userId, true);
@@ -361,73 +360,40 @@ class PlanController extends Controller
     public function binaryCom()
     {
         $pageTitle    = "Binary Commission";
-        $logs         = Transaction::where('user_id', Auth::id())->where('remark', 'binary_commission')->orderBy('id', 'DESC')->paginate(getPaginate());
+        $logs         = Transaction::where('user_id', auth()->id())->where('remark', 'binary_commission')->orderBy('id', 'DESC')->paginate(getPaginate());
         $emptyMessage = 'No data found';
         return view('Template::user.transactions', compact('pageTitle', 'logs', 'emptyMessage'));
     }
 
     protected function matchingCommissionForUplines(int $userId, float $planBV, string $details)
     {
-        $user = User::find($userId);
-        if (!$user) return;
+        $upline = $this->getPlacementUplineFor($userId, true);
 
-        // ✅ Get full placement upline (including self optional)
-        $uplines = $this->getPlacementUplineFor($userId, false);
+        // Remove the purchaser themselves
+        $upline = collect($upline)->reject(fn($u) => (int)$u->id === $userId);
 
-        if (empty($uplines)) return;
+        foreach ($upline as $item) {
+            $uplineUserId = $item->id;
 
-        foreach ($uplines as $upline) {
-
-            $uplineUser = User::find($upline->id);
-            if (!$uplineUser) continue;
-
-            // ✅ Only active plan users earn matching
-            $activePlan = Plan::where('id', $uplineUser->plan_id)
-                ->where('status', 1)
-                ->first();
-
-            if (!$activePlan) continue;
-
-            // ===============================
-            // SAME LOGIC AS YOUR VIEW CODE
-            // ===============================
-
+            // 12 PM / 12 AM split
             $todayStart = now()->startOfDay();
             $noonTime   = now()->setTime(12, 0);
             $todayEnd   = now()->endOfDay();
 
-            // Morning BV
-            $leftBVMorning  = BvLog::where('user_id', $uplineUser->id)
-                ->where('position', 1)
-                ->where('trx_type', '+')
-                ->whereBetween('created_at', [$todayStart, $noonTime])
-                ->sum('amount');
+            // BV sums for left/right
+            $leftBVMorning  = BvLog::where('user_id', $uplineUserId)->where('position', 1)->where('trx_type', '+')->whereBetween('created_at', [$todayStart, $noonTime])->sum('amount');
+            $rightBVMorning = BvLog::where('user_id', $uplineUserId)->where('position', 2)->where('trx_type', '+')->whereBetween('created_at', [$todayStart, $noonTime])->sum('amount');
 
-            $rightBVMorning = BvLog::where('user_id', $uplineUser->id)
-                ->where('position', 2)
-                ->where('trx_type', '+')
-                ->whereBetween('created_at', [$todayStart, $noonTime])
-                ->sum('amount');
+            $leftBVEvening  = BvLog::where('user_id', $uplineUserId)->where('position', 1)->where('trx_type', '+')->whereBetween('created_at', [$noonTime, $todayEnd])->sum('amount');
+            $rightBVEvening = BvLog::where('user_id', $uplineUserId)->where('position', 2)->where('trx_type', '+')->whereBetween('created_at', [$noonTime, $todayEnd])->sum('amount');
 
-            // Evening BV
-            $leftBVEvening  = BvLog::where('user_id', $uplineUser->id)
-                ->where('position', 1)
-                ->where('trx_type', '+')
-                ->whereBetween('created_at', [$noonTime, $todayEnd])
-                ->sum('amount');
+            // First half (12 PM)
+            $firstHalfPair = min(2, min($leftBVMorning, $rightBVMorning));
 
-            $rightBVEvening = BvLog::where('user_id', $uplineUser->id)
-                ->where('position', 2)
-                ->where('trx_type', '+')
-                ->whereBetween('created_at', [$noonTime, $todayEnd])
-                ->sum('amount');
-
-            // Pair calculation (exact same logic)
-            $firstHalfPair  = min(2, min($leftBVMorning, $rightBVMorning));
+            // Second half (12 AM)
             $secondHalfPair = min(2, min($leftBVEvening, $rightBVEvening));
 
             $pairMatch = $firstHalfPair + $secondHalfPair;
-
             $dailyCap = 4;
             $effectivePairs = min($pairMatch, $dailyCap);
 
@@ -436,33 +402,36 @@ class PlanController extends Controller
 
             if ($matchingCommission <= 0) continue;
 
-            // ===============================
-            // CREDIT COMMISSION
-            // ===============================
+            // Update user balance
+            $uplineUser = User::find($uplineUserId);
+            if (!$uplineUser) continue;
 
             $uplineUser->balance += $matchingCommission;
-            $uplineUser->total_matching_com += $matchingCommission;
+            $uplineUser->total_matching_com += $matchingCommission; // optional column
             $uplineUser->save();
 
+            // Transaction log
             Transaction::create([
-                'user_id'      => $uplineUser->id,
+                'user_id'      => $uplineUserId,
                 'amount'       => $matchingCommission,
                 'post_balance' => $uplineUser->balance,
                 'trx_type'     => '+',
                 'trx'          => getTrx(),
                 'remark'       => 'matching_commission',
-                'details'      => 'Matching commission from downline ' . $user->username . '. ' . $details,
+                'details'      => 'Matching commission from downline ' . $userId . '. ' . $details,
             ]);
 
+            // Commission log
             CommissionLog::create([
-                'user_id'         => $uplineUser->id,
+                'user_id'         => $uplineUserId,
                 'type'            => 'matching',
                 'amount'          => $matchingCommission,
-                'details'         => 'Matching commission from downline ' . $user->username . '. ' . $details,
-                'source_username' => $user->username,
+                'details'         => 'Matching commission from downline ' . $userId . '. ' . $details,
+                'source_username' => $uplineUser->username,
             ]);
         }
     }
+
 
     public function binarySummery()
     {
@@ -500,11 +469,11 @@ class PlanController extends Controller
     {
         $pageTitle = "Royalty Summary";
 
-        $logs = UserExtra::where('user_id', Auth::id())->firstOrFail();
-        $log  = User::where('id', Auth::id())->firstOrFail();
+        $logs = UserExtra::where('user_id', auth()->id())->firstOrFail();
+        $log  = User::where('id', auth()->id())->firstOrFail();
 
         // Get bv_price & royalty percentage from general_settings
-        $general = DB::table('general_settings')
+        $general = \DB::table('general_settings')
             ->select('bv_price', 'royalty_bonus_percentage')
             ->first();
 
@@ -528,7 +497,7 @@ class PlanController extends Controller
     public function binaryIncome()
     {
         $pageTitle = "Binary Income";
-        $transactions = Transaction::where('user_id', Auth::id())
+        $transactions = Transaction::where('user_id', auth()->id())
             ->where('remark', 'binary_commission')
             ->latest()
             ->paginate(getPaginate());
@@ -539,7 +508,7 @@ class PlanController extends Controller
     public function repurchaseIncome()
     {
         $pageTitle = "Repurchase Income";
-        $transactions = Transaction::where('user_id', Auth::id())
+        $transactions = Transaction::where('user_id', auth()->id())
             ->where('remark', 'repurchase_level_commission')
             ->latest()
             ->paginate(getPaginate());
@@ -550,7 +519,7 @@ class PlanController extends Controller
     public function RefferalIncome()
     {
         $pageTitle = "Referral Income";
-        $transactions = Transaction::where('user_id', Auth::id())
+        $transactions = Transaction::where('user_id', auth()->id())
             ->where('remark', 'referral_commission')
             ->latest()
             ->paginate(getPaginate());
@@ -566,8 +535,8 @@ class PlanController extends Controller
     public function SponsorIncome()
     {
         $pageTitle = "Sponsor Royalty Income";
-        $logs      = UserExtra::where('user_id', Auth::id())->firstOrFail();
-        $log      = User::where('id', auth::id())->firstOrFail();
+        $logs      = UserExtra::where('user_id', auth()->id())->firstOrFail();
+        $log      = User::where('id', auth()->id())->firstOrFail();
         return view('Template::user.sponsorIncome', compact('pageTitle', 'logs', 'log'));
     }
 
@@ -576,7 +545,7 @@ class PlanController extends Controller
         $pageTitle = "Level Income";
 
         // Get all level commissions for the authenticated user
-        $commissions = CommissionLog::where('user_id', Auth::id())
+        $commissions = CommissionLog::where('user_id', auth()->id())
             ->where('type', 'level')
             ->latest()
             ->paginate(getPaginate());
@@ -605,7 +574,7 @@ class PlanController extends Controller
             $logs      = $this->bvData();
         }
 
-        $logs = $logs->where('user_id', Auth::id())->latest('id')->paginate(getPaginate());
+        $logs = $logs->where('user_id', auth()->id())->latest('id')->paginate(getPaginate());
 
         return view('Template::user.bvLog', compact('pageTitle', 'logs'));
     }
@@ -623,13 +592,13 @@ class PlanController extends Controller
     public function myRefLog()
     {
         $pageTitle = "My Referral";
-        $logs      = User::where('ref_by', Auth::id())->latest()->paginate(getPaginate());
+        $logs      = User::where('ref_by', auth()->id())->latest()->paginate(getPaginate());
         return view('Template::user.myRef', compact('pageTitle', 'logs'));
     }
 
     public function myTree()
     {
-        $user = Auth::user();
+        $user = auth()->user();
         $tree = showTreePage($user->id, $user->fullname);
         $pageTitle = "My Tree";
 
@@ -659,7 +628,7 @@ class PlanController extends Controller
     public function myTeam(Request $request)
     {
         $pageTitle = "My Team";
-        $userId    = Auth::id();
+        $userId    = auth()->id();
 
         // Get all downline including self
         $rows = $this->getPlacementDownlineFor($userId, true);
