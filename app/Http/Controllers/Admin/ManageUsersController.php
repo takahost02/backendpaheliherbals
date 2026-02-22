@@ -210,8 +210,9 @@ class ManageUsersController extends Controller
     public function kycDetails($id)
     {
         $pageTitle = 'KYC Details';
-        // $user = UserKyc::findOrFail($id);
-        $user = User::findOrFail($id);
+
+        $user = UserKyc::where('user_id', $id)->firstOrFail();
+
         return view('admin.users.kyc_detail', compact('pageTitle', 'user'));
     }
 
