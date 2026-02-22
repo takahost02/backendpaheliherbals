@@ -111,7 +111,7 @@ class UserController extends Controller
     {
         $pageTitle = 'Deposit History';
 
-        return view('Template::user.balanceTransfer', compact());
+        return view('Template::user.balanceTransfer', compact('pageTitle'));
     }
 
 
