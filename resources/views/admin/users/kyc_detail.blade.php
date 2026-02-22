@@ -1,82 +1,151 @@
 @extends('admin.layouts.app')
+
 @section('panel')
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-body">
-                    @if($user->kyc_data)
-                        <ul class="list-group">
-                          @foreach($user->kyc_data as $val)
-                          @continue(!$val->value)
-                          <li class="list-group-item d-flex justify-content-between align-items-center">
-                            {{__($val->name)}}
-                            <span>
-                                @if($val->type == 'checkbox')
-                                    {{ implode(',',$val->value) }}
-                                @elseif($val->type == 'file')
-                                    @if($val->value)
-                                    <a href="{{ route('admin.download.attachment',encrypt(getFilePath('verify').'/'.$val->value)) }}"><i class="fa-regular fa-file"></i>  @lang('Attachment') </a>
-                                    @else
-                                        @lang('No File')
-                                    @endif
-                                @else
-                                <p>{{__($val->value)}}</p>
-                                @endif
-                            </span>
-                          </li>
-                          @endforeach
-                        </ul>
-                        @else
-                        <h5 class="text-center">@lang('KYC data not found')</h5>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+
+                @if($user)
+
+                <ul class="list-group">
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Aadhaar</strong>
+                        <span>{{ $user->aadhaar }}</span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>PAN</strong>
+                        <span>{{ $user->pan }}</span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Bank Name</strong>
+                        <span>{{ $user->bank_name }}</span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Account Holder</strong>
+                        <span>{{ $user->account_holder }}</span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Account Number</strong>
+                        <span>{{ $user->account_number }}</span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>IFSC</strong>
+                        <span>{{ $user->ifsc }}</span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>ID Proof</strong>
+                        <span>
+                            @if($user->id_proof)
+                                <a href="{{ asset('storage/'.$user->id_proof) }}" target="_blank">
+                                    <i class="fa-regular fa-file"></i> View File
+                                </a>
+                            @else
+                                No File
+                            @endif
+                        </span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Bank Proof</strong>
+                        <span>
+                            @if($user->bank_proof)
+                                <a href="{{ asset('storage/'.$user->bank_proof) }}" target="_blank">
+                                    <i class="fa-regular fa-file"></i> View File
+                                </a>
+                            @else
+                                No File
+                            @endif
+                        </span>
+                    </li>
+
+                    <li class="list-group-item d-flex justify-content-between">
+                        <strong>Status</strong>
+                        <span class="badge bg-warning text-dark">
+                            {{ ucfirst($user->status) }}
+                        </span>
+                    </li>
+
+                    @if($user->admin_remark)
+                    <li class="list-group-item">
+                        <strong>Admin Remark:</strong>
+                        <p class="mb-0 mt-1">{{ $user->admin_remark }}</p>
+                    </li>
                     @endif
 
-                    @if($user->kv == Status::KYC_UNVERIFIED)
-                    <div class="my-3">
-                        <h6>@lang('Rejection Reason')</h6>
-                        <p>{{ $user->kyc_rejection_reason }}</p>
-                    </div>
-                    @endif
+                </ul>
 
-                    @if($user->kv == Status::KYC_PENDING)
-                    <div class="d-flex flex-wrap justify-content-end mt-3">
-                        <button class="btn btn-outline--danger me-3" data-bs-toggle="modal" data-bs-target="#kycRejectionModal"><i class="las la-ban"></i>@lang('Reject')</button>
-                        <button class="btn btn-outline--success confirmationBtn" data-question="@lang('Are you sure to approve this documents?')" data-action="{{ route('admin.users.kyc.approve', $user->id) }}"><i class="las la-check"></i>@lang('Approve')</button>
-                    </div>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
+                @else
+                    <h5 class="text-center">KYC data not found</h5>
+                @endif
 
 
-    <div id="kycRejectionModal" class="modal fade" tabindex="-1" role="dialog">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@lang('Reject KYC Documents')</h5>
-                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                        <i class="las la-times"></i>
+                {{-- APPROVE / REJECT BUTTONS --}}
+                @if($user->status == 'pending')
+                <div class="d-flex flex-wrap justify-content-end mt-3">
+                    <button class="btn btn-outline-danger me-3" data-bs-toggle="modal" data-bs-target="#kycRejectionModal">
+                        Reject
+                    </button>
+
+                    <button class="btn btn-outline-success confirmationBtn"
+                        data-question="Are you sure to approve this documents?"
+                        data-action="{{ route('admin.users.kyc.approve', $user->user_id) }}">
+                        Approve
                     </button>
                 </div>
-                <form action="{{ route('admin.users.kyc.reject', $user->id) }}" method="POST">
-                    @csrf
-                    <div class="modal-body">
-                        <div class="alert alert-primary p-3">
-                            @lang('If you reject these documents, the user will be able to re-submit new documents and these documents will be replaced by new documents.')
-                        </div>
+                @endif
 
-                        <div class="form-group">
-                            <label>@lang('Rejection Reason')</label>
-                            <textarea class="form-control" name="reason" rows="4" required></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn--primary h-45 w-100">@lang('Submit')</button>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
+</div>
 
-    <x-confirmation-modal />
+
+{{-- REJECTION MODAL --}}
+<div id="kycRejectionModal" class="modal fade" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title">Reject KYC Documents</h5>
+                <button type="button" class="close" data-bs-dismiss="modal">
+                    ×
+                </button>
+            </div>
+
+            <form action="{{ route('admin.users.kyc.reject', $user->user_id) }}" method="POST">
+                @csrf
+                <div class="modal-body">
+
+                    <div class="alert alert-primary">
+                        If rejected, user can re-submit new documents.
+                    </div>
+
+                    <div class="form-group">
+                        <label>Rejection Reason</label>
+                        <textarea class="form-control" name="reason" rows="4" required></textarea>
+                    </div>
+
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary w-100">
+                        Submit
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+<x-confirmation-modal />
+
 @endsection
