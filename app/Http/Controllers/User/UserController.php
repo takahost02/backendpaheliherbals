@@ -107,6 +107,13 @@ class UserController extends Controller
         ));
     }
 
+    public function indexTransfer()
+    {
+        $pageTitle = 'Deposit History';
+
+        return view('Template::user.balanceTransfer', compact());
+    }
+
 
     public function kycForm()
     {
